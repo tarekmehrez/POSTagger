@@ -26,22 +26,27 @@ class Perceptron(object):
 
         feat_idx = feat_tuple[0]
         inst_labels = feat_tuple[1]
+        inst_vals = feat_tuple[2]
 
         self._theta = 0.1 * np.random.randn(len(self.labels),self.feat_size)
 
 
         for count, instance in enumerate(feat_idx):
 
-            self._logger.debug("Training instance: " + str(count))
+            if not inst_vals[count]:
+                continue
+            else:
 
-            compiled = self._compile_feats(instance)
-            results = compiled[0]
-            feat = compiled[1]
-            label_idx = self.labels.index(inst_labels[count])
+                self._logger.debug("Training instance: " + str(count) + ", out of: " + str(len(feat_idx)))
 
-            for perc_count,pred in enumerate(results):
-                if perc_count == label_idx and pred < 1: self._theta[perc_count] = self._theta[perc_count] + feat.T
-                if perc_count != label_idx and pred > 1: self._theta[perc_count] = self._theta[perc_count] - feat.T
+                compiled = self._compile_feats(instance)
+                results = compiled[0]
+                feat = compiled[1]
+                label_idx = self.labels.index(inst_labels[count])
+
+                for perc_count,pred in enumerate(results):
+                    if perc_count == label_idx and pred < 1: self._theta[perc_count] = self._theta[perc_count] + feat.T
+                    if perc_count != label_idx and pred > 1: self._theta[perc_count] = self._theta[perc_count] - feat.T
 
 
     def test(self,feat_tuple):
@@ -49,20 +54,26 @@ class Perceptron(object):
 
         feat_idx = feat_tuple[0]
         inst_labels = feat_tuple[1]
-
-        predictions = []
+        inst_vals = feat_tuple[2]
+        
+        f = open('data/perceptron-pred.col','w')
 
         for count, instance in enumerate(feat_idx):
             self._logger.debug("Testing instance: " + str(count))
 
-            compiled = self._compile_feats(instance)
-            results = compiled[0]
-            feat = compiled[1]
-            
-            predictions.append(self.labels[np.argmax(results)])
 
-        print predictions
-        self._logger.info("Done Testing, results are written in results.txt")
+            if not inst_vals[count]:                
+                f.write('\n')
+                continue
+            else:
+                compiled = self._compile_feats(instance)
+                results = compiled[0]
+                feat = compiled[1]
+
+                f.write(inst_vals[count] + "\t" + self.labels[np.argmax(results)] + "\n")
+
+        f.close()
+        self._logger.info("Done Testing, results are written in pred.col")
 
 
     def get_theta(self):

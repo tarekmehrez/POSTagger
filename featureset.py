@@ -1,7 +1,7 @@
 import numpy as np
 import re
 import logging
-
+import sys
 import time
 
 '''
@@ -40,23 +40,33 @@ class FeatureSet(object):
 		inst_vals = []
 		inst_labs = []
 
+		f1 = open('tmp.col','w')
+
 		f = open(file_path,'r')
 		i=1
 		for line in f.readlines():
 
-			self._logger.debug("Reading data, line: " + str(i))
+			self._logger.debug("Extracting Features for line: " + str(i))
 			i+= 1
+			
+			
+			content = line.split('\t',1)
+			if line == "\n":
+				f1.write(line)
 
-			if line != "\n":
-				content = line.split('\t',1)
+				inst_vals.append('')
+				inst_labs.append('')
+				num_idx.append(-1)
+				vocab_idx.append(-1)
+			else:
+				f1.write(content[0]+"\n")
 
 				inst_vals.append(content[0])
 				inst_labs.append(content[1].split("\n")[0])
 				num_idx.append(self._isnum(content[0])*1)
 				vocab_idx.append(self.vocab.index(content[0]))
-
 		f.close()
-
+		f1.close()
 		inst_vals = np.asarray(inst_vals).view(np.chararray)
 
 		self._logger.info("Extracting Suffix Features")
@@ -75,9 +85,12 @@ class FeatureSet(object):
 		feat_idx[:,2] = np.asarray(num_idx)
 		feat_idx[:,3] = inst_vals.isupper()*1
 		
-		self._logger.info("Feature Extraction DONE, with feature size: " + str(feat_idx.shape))
+		self._logger.info("Features Shape: " + str(feat_idx.shape))
+		self._logger.info("Instnaces Shape: " + str(len(inst_vals)))
+		self._logger.info("Labels Shape: " + str(len(inst_labs)))
 
-		return (feat_idx, inst_labs)
+
+		return (feat_idx, inst_labs, inst_vals)
 
 	def _isnum(self,str):
 		if str.isdigit(): return True

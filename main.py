@@ -58,12 +58,12 @@ def train(results):
 		logger.info("meta data file already exists ... loading")
 		meta_data = read_obj('meta_data')
 
-	if not os.path.exists('model/train_feats'):
+	if not os.path.exists('model/train.feats'):
 		train_feats = extract_feats(meta_data,train_file)
 		logger.info("Writing extracted feats for training files to train.feats")
 		write_obj(train_feats,'train.feats')
 	else:
-		logger.info("train_feats already exists ... loading.")
+		logger.info("train.feats already exists ... loading.")
 		train_feats = read_obj('train.feats')
 
 
