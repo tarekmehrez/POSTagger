@@ -16,26 +16,17 @@ is capital
 class FeatureSet(object):
 
 	
-	def __init__(self, vocab_file, labels_file):
+	def __init__(self, meta_data):
 		
 		self._reg = re.compile("^\d+((\,|\.)\d+)*$")
 		
 		logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 		self._logger = logging.getLogger(__name__)
 
-		self.suffixes = ["able", "al", "ed", "ing", "er", "est", "ion", "ive", "less", "ly", "ness", "ous", "." ]
+		self.vocab = meta_data[0]
+		self.labels = meta_data[1]
+		self.suffixes = meta_data[2]
 
-		with open(vocab_file) as file:
-			self.vocab = [line.strip().decode('utf-8') for line in file]
-
-		with open(labels_file) as file:
-			self.labels = [line.strip().decode('utf-8') for line in file]
-
-		self.feat_len = len(self.vocab) + len(self.suffixes) + 2
-
-
-	def get_meta_data(self):
-		return(self.suffixes, self.vocab, self.labels)
 
 	def extract_feats(self, file_path):
 
