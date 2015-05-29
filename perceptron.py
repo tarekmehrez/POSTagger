@@ -34,8 +34,9 @@ class Perceptron(object):
 
             self._logger.debug("Training instance: " + str(count))
 
-            results = self._compile_feats(instance)
-
+            compiled = self._compile_feats(instance)
+            results = compiled[0]
+            feat = compiled[1]
             label_idx = self.labels.index(inst_labels[count])
 
             for perc_count,pred in enumerate(results):
@@ -43,15 +44,21 @@ class Perceptron(object):
                 if perc_count != label_idx and pred > 1: self._theta[perc_count] = self._theta[perc_count] - feat.T
 
 
-    def test(self,feat_idx):
+    def test(self,feat_tuple):
         self._logger.info("Started testing Perceptron")
+
+        feat_idx = feat_tuple[0]
+        inst_labels = feat_tuple[1]
+
         predictions = []
 
         for count, instance in enumerate(feat_idx):
             self._logger.debug("Testing instance: " + str(count))
 
-            results = self._compile_feats(inst_labels)
-
+            compiled = self._compile_feats(instance)
+            results = compiled[0]
+            feat = compiled[1]
+            
             predictions.append(self.labels[np.argmax(results)])
 
         print predictions
@@ -76,4 +83,4 @@ class Perceptron(object):
         feats = np.repeat(feat.T,len(self.labels),axis=0)
 
         results = np.sum(feats * self._theta, axis =1)
-        return results
+        return (results,feat)

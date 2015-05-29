@@ -2,6 +2,7 @@ import sys
 import argparse
 import logging
 import pickle 
+import os.path
 
 
 from featureset import FeatureSet
@@ -16,16 +17,21 @@ def help_exit():
 	sys.exit(1)
 
 
-def write(obj, file_name):
-	f = open(file_name, 'ab+')
-	pickle.dump(f, obj)
+def write_obj(obj, file_name):
+	f = open('model/'+file_name, 'wb')
+	pickle.dump(obj, f)
+	f.close()
 
-def read(file_name):
-	f = open(file_name, 'rb')
+def read_obj(file_name):
+	f = open('model/'+file_name, 'rb')
 	return pickle.load(f)
 
 
 ######## Core functions ########
+
+def extract_feats(meta_data,feat_file):
+	feature_set = FeatureSet(meta_data)
+	return feature_set.extract_feats(feat_file)
 
 
 def train(results):
@@ -41,32 +47,34 @@ def train(results):
 					'labels file:	' + str(results.labels)	+ "\n")
 
 
-	meta_data_instance = MetaData(vocab_file,labels_file)
-	meta_data = meta_data_instance.get_meta_data()
 
 
+	if not os.path.exists('model/meta_data'):
+		meta_data_instance = MetaData(vocab_file,labels_file)
+		meta_data = meta_data_instance.get_meta_data()
+		logger.info("Writing meta data file")
+		write_obj(meta_data,'meta_data')
+	else:
+		logger.info("meta data file already exists ... loading")
+		meta_data = read_obj('meta_data')
+
+	if not os.path.exists('model/train_feats'):
+		train_feats = extract_feats(meta_data,train_file)
+		logger.info("Writing extracted feats for training files to train.feats")
+		write_obj(train_feats,'train.feats')
+	else:
+		logger.info("train_feats already exists ... loading.")
+		train_feats = read_obj('train.feats')
 
 
-	# extract features
-	feature_set = FeatureSet(meta_data)
-
-	# extract feats for training set
-	train_feats = feature_set.extract_feats(train_file)
-
-	# initialize classifier with meta data
-	classifier = Perceptron(meta_data)
-
-	# train classifier on training features
-	classifier.train(train_feats)
-
-
-	logger.info("Done Training, model is written in model file")
-	model = classifier.get_theta()
-	write(model, 'model')
-
-	logger.info("Writing meta data file")
-	write(meta_data,'meta_data')
-
+	if not os.path.exists('model/model'):
+		classifier = Perceptron(meta_data)
+		classifier.train(train_feats)
+		logger.info("Done Training, model is written in model file")
+		model = classifier.get_theta()
+		write_obj(model, 'model')
+	else:
+		logger.info('model already exists, nothing to do!')
 
 
 def test(results):
@@ -79,12 +87,16 @@ def test(results):
 
 
 	logger.info("Loading model and meta_data")
-	model = read('model')
-	meta_data= read('meta_data')
+	model = read_obj('model')
+	meta_data= read_obj('meta_data')
 
-
-	feature_set = FeatureSet(meta_data)
-	test_feats = feature_set.extract_feats(test_file)
+	if not os.path.exists('model/test.feats'):
+		logger.info("Done feature extraction for testing data, writing in test.feats")
+		test_feats = extract_feats(meta_data,test_file)
+		write_obj(test_feats,'test.feats')
+	else:
+		logger.info("test.feats already exists ... loading.")
+		test_feats = read_obj('test.feats')
 
 	classifier = Perceptron(meta_data)
 	classifier.load_theta(model)
@@ -117,8 +129,13 @@ parser.add_argument('--test', action='store', dest='test',
 results = parser.parse_args()
 
 
+
 if len(sys.argv)==1:
 	help_exit()
+
+if not os.path.exists('model'):
+    os.makedirs('model')
+
 
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 logger = logging.getLogger(__name__)
