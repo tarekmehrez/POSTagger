@@ -113,17 +113,17 @@ def test(results):
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--train', action='store', dest='train',
-                    help='Input training file')
+                    help='Training file')
 
 parser.add_argument('--vocab', action='store', dest='vocab',
-                    help='Input training file')
+                    help='Vocab file')
 
 parser.add_argument('--labels', action='store', dest='labels',
-                    help='Input training file')
+                    help='Labels file')
 
 
 parser.add_argument('--test', action='store', dest='test',
-                    help='Input training file')
+                    help='Testing file')
 
 
 results = parser.parse_args()
