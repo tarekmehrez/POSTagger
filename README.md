@@ -1,6 +1,8 @@
 # POSTagger
 Implementation of a POS Tagger using the Perceptron algorithm
 
+* Currently being tested/not ready
+
 The tool takes in a training file, vocabulary file & labels file to train a model, then a testing file should be passed to do the tagging.
 
 # Steps: 
