@@ -9,7 +9,7 @@ from featureset import FeatureSet
 from perceptron import Perceptron
 from evaluate import Evaluator
 from meta_data import MetaData
-
+from logistic import LogisticRegression
 ######## Org. functions ########
 
 def help_exit():
@@ -67,7 +67,11 @@ def train(results):
 		train_feats = read_obj('train.feats')
 
 	if not os.path.exists('model/model'):
-		classifier = Perceptron(meta_data)
+		if results.classifier == 0:
+			classifier = Perceptron(meta_data)
+		else:
+			classifier = LogisticRegression(meta_data)
+
 		classifier.train(train_feats)
 		logger.info("Done Training, model is written in model file")
 		model = classifier.get_theta()
@@ -135,6 +139,9 @@ def evaluate(results):
 
 parser = argparse.ArgumentParser()
 
+parser.add_argument('--class', action='store', dest='classifier',
+                    help='0: Perceptron, 1: Logistic Regression [default=0]')
+
 parser.add_argument('--train', action='store', dest='train',
                     help='Training file')
 
@@ -158,6 +165,9 @@ parser.add_argument('--pred', action='store', dest='pred',
 parser.add_argument('--gold', action='store', dest='gold',
                     help='In case eval was set to 1: Gold Standard File')
 
+
+
+
 results = parser.parse_args()
 
 
@@ -171,6 +181,10 @@ if not os.path.exists('model'):
 
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 logger = logging.getLogger(__name__)
+
+# if results.classifier > 1 or results.classifier < 0:
+# 	print "Possible values for --class are 0 or 1"
+# 	help_exit()
 
 if results.train and results.test:
 	print "You can only do training or testing at a time"

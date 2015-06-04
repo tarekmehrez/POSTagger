@@ -19,7 +19,8 @@ class Perceptron(object):
         self.vocab = meta_data[0]
         self.labels = meta_data[1]
         self.suffixes = meta_data[2]
-        self.feat_size = len(self.suffixes) + len(self.vocab) + 2
+        # self.feat_size = len(self.suffixes) + len(self.vocab) + 2
+        self.feat_size = 4
 
 
     def train(self,feat_tuple):
@@ -89,12 +90,12 @@ class Perceptron(object):
 
 
         feat = np.asarray([instance])
-        feat = np.zeros([self.feat_size,1])
+        # feat = np.zeros([self.feat_size,1])
 
-        feat[instance[0]] = 1
-        feat[instance[1] + len(self.vocab)] = 1
-        feat[len(feat) - 2] = instance[2]
-        feat[len(feat) - 1] = instance[3]
+        # feat[instance[0]] = 1
+        # feat[instance[1] + len(self.vocab)] = 1
+        # feat[len(feat) - 2] = instance[2]
+        # feat[len(feat) - 1] = instance[3]
 
         feats = np.repeat(feat.T,len(self.labels),axis=0)
         results = np.sum(feats * self._theta, axis =1)

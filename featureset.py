@@ -40,6 +40,8 @@ class FeatureSet(object):
 		inst_vals = []
 		inst_labs = []
 
+		labs_dict = {}
+
 		f = open(file_path,'r')
 		i=1
 		for line in f.readlines():
@@ -56,11 +58,17 @@ class FeatureSet(object):
 				num_idx.append(-1)
 				vocab_idx.append(-1)
 			else:
+				token = str(content[0])
+				label = str(content[1].split("\n")[0])
 
-				inst_vals.append(content[0])
-				inst_labs.append(content[1].split("\n")[0])
-				num_idx.append(self._isnum(content[0])*1)
-				vocab_idx.append(self.vocab.index(content[0]))
+
+				inst_vals.append(token)
+				inst_labs.append(label)
+				num_idx.append(self._isnum(token)*1)
+				vocab_idx.append(self.vocab.index(token))
+
+				if label in labs_dict: labs_dict[label].append(self.vocab.index(token))
+				else: labs_dict[label] = [self.vocab.index(token)]
 		f.close()
 		inst_vals = np.asarray(inst_vals).view(np.chararray)
 
@@ -80,15 +88,15 @@ class FeatureSet(object):
 		feat_idx[:,2] = np.asarray(num_idx)
 		feat_idx[:,3] = inst_vals.isupper()*1
 		
-		# feat_idx[:,0] = (feat_idx[:,0] - np.mean(feat_idx[:,0])) / (np.max(feat_idx[:,0]) - np.min(feat_idx[:,0]))
-		# feat_idx[:,1] = (feat_idx[:,1] - np.mean(feat_idx[:,1])) / (np.max(feat_idx[:,1]) - np.min(feat_idx[:,1]))
+		feat_idx[:,0] = (feat_idx[:,0] - np.mean(feat_idx[:,0])) / (np.max(feat_idx[:,0]) - np.min(feat_idx[:,0]))
+		feat_idx[:,1] = (feat_idx[:,1] - np.mean(feat_idx[:,1])) / (np.max(feat_idx[:,1]) - np.min(feat_idx[:,1]))
 
 		self._logger.info("Features Shape: " + str(feat_idx.shape))
 		self._logger.info("Instnaces Shape: " + str(len(inst_vals)))
 		self._logger.info("Labels Shape: " + str(len(inst_labs)))
 
 
-		return (feat_idx, inst_labs, inst_vals)
+		return (feat_idx, inst_labs, inst_vals,labs_dict)
 
 	def _isnum(self,str):
 		if str.isdigit(): return True
