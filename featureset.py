@@ -40,8 +40,6 @@ class FeatureSet(object):
 		inst_vals = []
 		inst_labs = []
 
-		f1 = open('tmp.col','w')
-
 		f = open(file_path,'r')
 		i=1
 		for line in f.readlines():
@@ -52,21 +50,18 @@ class FeatureSet(object):
 			
 			content = line.split('\t',1)
 			if line == "\n":
-				f1.write(line)
 
 				inst_vals.append('')
 				inst_labs.append('')
 				num_idx.append(-1)
 				vocab_idx.append(-1)
 			else:
-				f1.write(content[0]+"\n")
 
 				inst_vals.append(content[0])
 				inst_labs.append(content[1].split("\n")[0])
 				num_idx.append(self._isnum(content[0])*1)
 				vocab_idx.append(self.vocab.index(content[0]))
 		f.close()
-		f1.close()
 		inst_vals = np.asarray(inst_vals).view(np.chararray)
 
 		self._logger.info("Extracting Suffix Features")
@@ -85,6 +80,9 @@ class FeatureSet(object):
 		feat_idx[:,2] = np.asarray(num_idx)
 		feat_idx[:,3] = inst_vals.isupper()*1
 		
+		# feat_idx[:,0] = (feat_idx[:,0] - np.mean(feat_idx[:,0])) / (np.max(feat_idx[:,0]) - np.min(feat_idx[:,0]))
+		# feat_idx[:,1] = (feat_idx[:,1] - np.mean(feat_idx[:,1])) / (np.max(feat_idx[:,1]) - np.min(feat_idx[:,1]))
+
 		self._logger.info("Features Shape: " + str(feat_idx.shape))
 		self._logger.info("Instnaces Shape: " + str(len(inst_vals)))
 		self._logger.info("Labels Shape: " + str(len(inst_labs)))

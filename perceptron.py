@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 import pickle
+import sys
 class Perceptron(object):
 
 
@@ -41,12 +42,13 @@ class Perceptron(object):
 
                 compiled = self._compile_feats(instance)
                 results = compiled[0]
-                feat = compiled[1]
+                feats = compiled[1]
                 label_idx = self.labels.index(inst_labels[count])
 
+                # print feats
                 for perc_count,pred in enumerate(results):
-                    if perc_count == label_idx and pred < 1: self._theta[perc_count] = self._theta[perc_count] + feat.T
-                    if perc_count != label_idx and pred > 1: self._theta[perc_count] = self._theta[perc_count] - feat.T
+                    if perc_count == label_idx and pred < 1: self._theta[perc_count] = self._theta[perc_count] + feats[0]
+                    if perc_count != label_idx and pred > 1: self._theta[perc_count] = self._theta[perc_count] - feats[0]
 
 
     def test(self,feat_tuple):
@@ -56,7 +58,7 @@ class Perceptron(object):
         inst_labels = feat_tuple[1]
         inst_vals = feat_tuple[2]
         
-        f = open('data/perceptron-pred.col','w')
+        f = open('data/pred.col','w')
 
         for count, instance in enumerate(feat_idx):
             self._logger.debug("Testing instance: " + str(count))
@@ -84,6 +86,9 @@ class Perceptron(object):
         self._theta = theta
 
     def _compile_feats(self,instance):
+
+
+        feat = np.asarray([instance])
         feat = np.zeros([self.feat_size,1])
 
         feat[instance[0]] = 1
@@ -92,6 +97,5 @@ class Perceptron(object):
         feat[len(feat) - 1] = instance[3]
 
         feats = np.repeat(feat.T,len(self.labels),axis=0)
-
         results = np.sum(feats * self._theta, axis =1)
-        return (results,feat)
+        return (results,feats)

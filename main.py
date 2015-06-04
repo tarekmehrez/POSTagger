@@ -7,8 +7,8 @@ import os.path
 
 from featureset import FeatureSet
 from perceptron import Perceptron
+from evaluate import Evaluator
 from meta_data import MetaData
-
 
 ######## Org. functions ########
 
@@ -66,7 +66,6 @@ def train(results):
 		logger.info("train.feats already exists ... loading.")
 		train_feats = read_obj('train.feats')
 
-
 	if not os.path.exists('model/model'):
 		classifier = Perceptron(meta_data)
 		classifier.train(train_feats)
@@ -102,8 +101,32 @@ def test(results):
 	classifier.load_theta(model)
 	classifier.test(test_feats)
 
+def evaluate(results):
+	vocab_file = results.vocab
+	labels_file = results.labels
+
+	gold_file = results.gold
+	pred_file = results.pred
+
+	logger.debug(	'Started evaluation with options:'		+ "\n" +
+					'gold file:		' + str(results.gold) 	+ "\n" + 
+					'pred file:		' + str(results.pred) 	+ "\n" + 
+					'vocab file:	' + str(results.vocab)	+ "\n" + 
+					'labels file:	' + str(results.labels)	+ "\n")
 
 
+	if not os.path.exists('model/meta_data'):
+		meta_data_instance = MetaData(vocab_file,labels_file)
+		meta_data = meta_data_instance.get_meta_data()
+		logger.info("Writing meta data file")
+		write_obj(meta_data,'meta_data')
+	else:
+		logger.info("meta data file already exists ... loading")
+		meta_data = read_obj('meta_data')
+
+
+	evaluator = Evaluator(meta_data, pred_file, gold_file)
+	evaluator.evaluate()
 
 ##############################################################################################################################
 
@@ -125,6 +148,15 @@ parser.add_argument('--labels', action='store', dest='labels',
 parser.add_argument('--test', action='store', dest='test',
                     help='Testing file')
 
+parser.add_argument('--eval', action='store', dest='eval',type=int, default=0,choices=[0, 1],
+                    help='Set to 1, to run evaluation [default=0]. The following files must be specified: (Vocab, Labels, Pred, Gold)')
+
+parser.add_argument('--pred', action='store', dest='pred',
+                    help='In case eval was set to 1: Tagged Predictions File')
+
+
+parser.add_argument('--gold', action='store', dest='gold',
+                    help='In case eval was set to 1: Gold Standard File')
 
 results = parser.parse_args()
 
@@ -153,6 +185,17 @@ if results.train:
 		
 if results.test:
 	test(results)
+
+if results.eval == 0 and (results.pred or results.gold):
+	print "Predictions, gold annotations files could be specified only if eval is set to 1, to evaluate the classifier"
+	help_exit()
+
+if results.eval == 1:
+	if not (results.pred and results.gold and results.vocab and results.labels):
+		print "Predictions, gold annotations, vocab & labels files must be specified when eval is set to 1"
+		help_exit()
+	else:
+		evaluate(results)
 
 
 

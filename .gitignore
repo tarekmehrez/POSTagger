@@ -1,2 +1,6 @@
 *.pyc
 .DS_Store
+baseline/*
+model/*
+eval.out
+data/*
