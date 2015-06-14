@@ -22,7 +22,6 @@ class Perceptron(object):
         self.labels = meta_data[1]
         self.suffixes = meta_data[2]
         self.feat_size = len(self.suffixes) + len(self.vocab) + 2
-        # self.feat_size = 4
 
 
     def train(self,feat_tuple):
@@ -30,37 +29,28 @@ class Perceptron(object):
 
 
         feat_idx = feat_tuple[0]
-        inst_labels = np.asarray(feat_tuple[1]).view(np.chararray)
+        inst_labels = feat_tuple[1]
         inst_vals = feat_tuple[2]
 
-        self._theta = 0.1 * np.random.randn(len(self.labels),self.feat_size)
+        self._theta = 0.1 * np.random.randn(len(self.labels),self.feat_size) * 0
+
+        for i in range(500):
+            self._logger.info("training iteration: " + str(i))
+
+            for count, instance in enumerate(feat_idx):
+
+                if not inst_vals[count]:
+                    continue
+                else:
 
 
-        for count, instance in enumerate(feat_idx):
+                    results = np.sum(self._theta[:,instance],axis=1)
 
-            if not inst_vals[count]:
-                continue
-            else:
+                    label_idx = self.labels.index(inst_labels[count])
 
-                # self._logger.debug("Training instance: " + str(count) + ", out of: " + str(feat_idx.shape[0]))
-
-                
-                results = instance.multiply(self._theta)
-                results = results.sum(axis=1)
-
-                label_idx = self.labels.index(inst_labels[count])
-
-                if results[label_idx] < 1:
-                    self._theta[label_idx] = self._theta[label_idx] + instance
-
-
-                indices = np.asarray(np.where(results > 1)[0]).ravel().tolist()
-
-                if label_idx in indices:                
-                    indices = indices.remove(label_idx)
-
-                if indices:
-                    self._theta[indices] =  self._theta[indices]  - instance.toarray()
+                    for perc_count,pred in enumerate(results):
+                        if perc_count == label_idx and pred < 1: self._theta[perc_count][instance] += 1
+                        if perc_count != label_idx and pred > 1: self._theta[perc_count][instance] -= 1
 
 
     def test(self,feat_tuple):
@@ -73,17 +63,14 @@ class Perceptron(object):
         f = open('data/pred.col','w')
 
         for count, instance in enumerate(feat_idx):
-            self._logger.debug("Testing instance: " + str(count))
 
 
             if not inst_vals[count]:                
                 f.write('\n')
                 continue
             else:
-                results = instance.multiply(self._theta)
-                results = results.sum(axis=1)
+                results = np.sum(self._theta[:,instance],axis=1)
  
-                # print results
 
                 f.write(inst_vals[count] + "\t" + self.labels[np.argmax(results)] + "\n")
 
