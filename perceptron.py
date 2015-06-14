@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.sparse import csr_matrix
+
 import logging
 import pickle
 import sys
@@ -19,15 +21,16 @@ class Perceptron(object):
         self.vocab = meta_data[0]
         self.labels = meta_data[1]
         self.suffixes = meta_data[2]
-        # self.feat_size = len(self.suffixes) + len(self.vocab) + 2
-        self.feat_size = 4
+        self.feat_size = len(self.suffixes) + len(self.vocab) + 2
+        # self.feat_size = 4
 
 
     def train(self,feat_tuple):
         self._logger.info("Started training Perceptron")
 
+
         feat_idx = feat_tuple[0]
-        inst_labels = feat_tuple[1]
+        inst_labels = np.asarray(feat_tuple[1]).view(np.chararray)
         inst_vals = feat_tuple[2]
 
         self._theta = 0.1 * np.random.randn(len(self.labels),self.feat_size)
@@ -39,17 +42,25 @@ class Perceptron(object):
                 continue
             else:
 
-                self._logger.debug("Training instance: " + str(count) + ", out of: " + str(len(feat_idx)))
+                # self._logger.debug("Training instance: " + str(count) + ", out of: " + str(feat_idx.shape[0]))
 
-                compiled = self._compile_feats(instance)
-                results = compiled[0]
-                feats = compiled[1]
+                
+                results = instance.multiply(self._theta)
+                results = results.sum(axis=1)
+
                 label_idx = self.labels.index(inst_labels[count])
 
-                # print feats
-                for perc_count,pred in enumerate(results):
-                    if perc_count == label_idx and pred < 1: self._theta[perc_count] = self._theta[perc_count] + feats[0]
-                    if perc_count != label_idx and pred > 1: self._theta[perc_count] = self._theta[perc_count] - feats[0]
+                if results[label_idx] < 1:
+                    self._theta[label_idx] = self._theta[label_idx] + instance
+
+
+                indices = np.asarray(np.where(results > 1)[0]).ravel().tolist()
+
+                if label_idx in indices:                
+                    indices = indices.remove(label_idx)
+
+                if indices:
+                    self._theta[indices] =  self._theta[indices]  - instance.toarray()
 
 
     def test(self,feat_tuple):
@@ -69,9 +80,10 @@ class Perceptron(object):
                 f.write('\n')
                 continue
             else:
-                compiled = self._compile_feats(instance)
-                results = compiled[0]
-                feat = compiled[1]
+                results = instance.multiply(self._theta)
+                results = results.sum(axis=1)
+ 
+                # print results
 
                 f.write(inst_vals[count] + "\t" + self.labels[np.argmax(results)] + "\n")
 
@@ -85,18 +97,3 @@ class Perceptron(object):
 
     def load_theta(self, theta):
         self._theta = theta
-
-    def _compile_feats(self,instance):
-
-
-        feat = np.asarray([instance])
-        # feat = np.zeros([self.feat_size,1])
-
-        # feat[instance[0]] = 1
-        # feat[instance[1] + len(self.vocab)] = 1
-        # feat[len(feat) - 2] = instance[2]
-        # feat[len(feat) - 1] = instance[3]
-
-        feats = np.repeat(feat.T,len(self.labels),axis=0)
-        results = np.sum(feats * self._theta, axis =1)
-        return (results,feats)

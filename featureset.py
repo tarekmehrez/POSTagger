@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.sparse import csr_matrix
+
 import re
 import logging
 import sys
@@ -32,21 +34,20 @@ class FeatureSet(object):
 
 		self._logger.info("Started Feature Extraction")
 		
-		vocab_idx = []
-		suff_idx = []
-		num_idx = []
+		vocab_feats = [[0] * len(self.vocab)]
+		suff_feats = []
+		num_feats = []
 
 
 		inst_vals = []
 		inst_labs = []
 
-		labs_dict = {}
 
 		f = open(file_path,'r')
 		i=1
 		for line in f.readlines():
 
-			self._logger.debug("Extracting Features for line: " + str(i))
+			# self._logger.debug("Extracting Features for line: " + str(i))
 			i+= 1
 			
 			
@@ -55,8 +56,8 @@ class FeatureSet(object):
 
 				inst_vals.append('')
 				inst_labs.append('')
-				num_idx.append(-1)
-				vocab_idx.append(-1)
+				num_feats.append(-1)
+				vocab_feats.append([-1] * len(self.vocab))
 			else:
 				token = str(content[0])
 				label = str(content[1].split("\n")[0])
@@ -64,39 +65,50 @@ class FeatureSet(object):
 
 				inst_vals.append(token)
 				inst_labs.append(label)
-				num_idx.append(self._isnum(token)*1)
-				vocab_idx.append(self.vocab.index(token))
+				num_feats.append(self._isnum(token)*1)
 
-				if label in labs_dict: labs_dict[label].append(self.vocab.index(token))
-				else: labs_dict[label] = [self.vocab.index(token)]
+				current = [0] * len(self.vocab)
+				current[self.vocab.index(token)] = 1
+
+				vocab_feats.append(current)
+
+
 		f.close()
 		inst_vals = np.asarray(inst_vals).view(np.chararray)
+		inst_labs = np.asarray(inst_labs).view(np.chararray)
+
+		vocab_feats = np.asarray(vocab_feats[1:])
 
 		self._logger.info("Extracting Suffix Features")
 
-		suff_idx = np.zeros(len(inst_vals))
+		suff_feats = np.zeros((len(inst_vals),len(self.suffixes)))
 
 		for count,suff in enumerate(self.suffixes):
-			suff_idx += inst_vals.endswith(suff)*count
+
+			has_suff = inst_vals.endswith(suff)*1
+			suff_feats[has_suff,count] = 1
+
 
 		self._logger.info("Finalizing Feature Extraction")
 
-		feat_idx = np.zeros([len(inst_vals),4])
 
-		feat_idx[:,0] = np.asarray(vocab_idx)
-		feat_idx[:,1] = suff_idx
-		feat_idx[:,2] = np.asarray(num_idx)
-		feat_idx[:,3] = inst_vals.isupper()*1
-		
-		feat_idx[:,0] = (feat_idx[:,0] - np.mean(feat_idx[:,0])) / (np.max(feat_idx[:,0]) - np.min(feat_idx[:,0]))
-		feat_idx[:,1] = (feat_idx[:,1] - np.mean(feat_idx[:,1])) / (np.max(feat_idx[:,1]) - np.min(feat_idx[:,1]))
+		total_feats = np.hstack((vocab_feats,suff_feats))
 
-		self._logger.info("Features Shape: " + str(feat_idx.shape))
+		num_feats = np.array([num_feats])
+		cap_feats = np.array([inst_vals.isupper()*1])
+
+		total_feats = np.hstack((total_feats,num_feats.T))
+		total_feats = np.hstack((total_feats,cap_feats.T))
+
+		feat_dense = csr_matrix(total_feats)
+
+
+		self._logger.info("Features Shape: " + str(feat_dense.shape))
 		self._logger.info("Instnaces Shape: " + str(len(inst_vals)))
 		self._logger.info("Labels Shape: " + str(len(inst_labs)))
 
-
-		return (feat_idx, inst_labs, inst_vals,labs_dict)
+		print feat_dense.toarray()
+		return (feat_dense, inst_labs, inst_vals)
 
 	def _isnum(self,str):
 		if str.isdigit(): return True

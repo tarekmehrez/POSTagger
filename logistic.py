@@ -85,7 +85,29 @@ class LogisticRegression(object):
 
 
 	def test(self,feat_tuple):
+		self.logger.info("Started testing Perceptron")
 
+		feat_idx = feat_tuple[0]
+		inst_labels = feat_tuple[1]
+		inst_vals = feat_tuple[2]
+
+		f = open('data/pred.col','w')
+
+		for count, instance in enumerate(feat_idx):
+			self.logger.debug("Testing instance: " + str(count))
+
+
+			if not inst_vals[count]:                
+				f.write('\n')
+				continue
+			else:
+				
+				hyp = self.sigmoid(np.dot(self.theta,instance))
+				print hyp
+				f.write(inst_vals[count] + "\t" + self.labels[np.argmax(hyp)] + "\n")
+
+		f.close()
+		self.logger.info("Done Testing, results are written in pred.col")
 
 	def get_theta(self):
 		return self.theta

@@ -67,10 +67,10 @@ def train(results):
 		train_feats = read_obj('train.feats')
 
 	if not os.path.exists('model/model'):
-		if results.classifier == 0:
-			classifier = Perceptron(meta_data)
-		else:
-			classifier = LogisticRegression(meta_data)
+		# if results.classifier == 0:
+		classifier = Perceptron(meta_data)
+		# else:
+		# 	classifier = LogisticRegression(meta_data)
 
 		classifier.train(train_feats)
 		logger.info("Done Training, model is written in model file")
@@ -101,7 +101,11 @@ def test(results):
 		logger.info("test.feats already exists ... loading.")
 		test_feats = read_obj('test.feats')
 
+	# if results.classifier == 0:
 	classifier = Perceptron(meta_data)
+	# else:
+		# classifier = LogisticRegression(meta_data)
+		
 	classifier.load_theta(model)
 	classifier.test(test_feats)
 
