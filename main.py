@@ -9,7 +9,6 @@ from featureset import FeatureSet
 from perceptron import Perceptron
 from evaluate import Evaluator
 from meta_data import MetaData
-from logistic import LogisticRegression
 ######## Org. functions ########
 
 def help_exit():
@@ -66,18 +65,14 @@ def train(results):
 		logger.info("train.feats already exists ... loading.")
 		train_feats = read_obj('train.feats')
 
-	if not os.path.exists('model/model'):
-		# if results.classifier == 0:
-		classifier = Perceptron(meta_data)
-		# else:
-		# 	classifier = LogisticRegression(meta_data)
-
-		classifier.train(train_feats)
-		logger.info("Done Training, model is written in model file")
-		model = classifier.get_theta()
-		write_obj(model, 'model')
-	else:
-		logger.info('model already exists, nothing to do!')
+	# if not os.path.exists('model/model'):
+	# 	classifier = Perceptron(meta_data)
+	# 	classifier.train(train_feats)
+	# 	logger.info("Done Training, model is written in model file")
+	# 	model = classifier.get_theta()
+	# 	write_obj(model, 'model')
+	# else:
+	# 	logger.info('model already exists, nothing to do!')
 
 
 def test(results):

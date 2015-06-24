@@ -19,68 +19,141 @@ class FeatureSet(object):
 
 	def __init__(self, meta_data):
 
-		self._reg = re.compile("^\d+((\,|\.)\d+)*$")
+		self.reg = re.compile("^\d+((\,|\.|\/)\d+)*$")
 		logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
-		self._logger = logging.getLogger(__name__)
+		self.logger = logging.getLogger(__name__)
 
 		self.vocab = meta_data[0]
 		self.labels = meta_data[1]
-		self.suffixes = meta_data[2]
+
+
+
+
+	# FEATURES:
+	# word form (N)
+	# common prefixes (P)
+	# common suffixes (S)
+	# is upper (1)
+	# is capital (1)
+	# is number (1)
+	############################
+	# token length (len(max(N)))
+	# token position (len(max(Sentences)))
+	# form of previous and next tokens (N*2)
+	# length of previous and next tokens (len(max(N))*2)
 
 
 	def extract_feats(self, file_path):
 
-		self._logger.info("Started Feature Extraction")
+
+		self.logger.info("Started Feature Extraction")
+
+		self.logger.info("Extracting tokens and sentences")
+		# get all tokens in the training file
+		with open(file_path) as file:
+			tokens = np.array([line.strip().decode('utf-8').split('\t',1)[0] for line in file])
+
+		with open(file_path) as file:
+			labels = np.array([line.strip().decode('utf-8').split('\t',1)[-1].split("\n")[0] for line in file])
+
+		tokens = np.asarray(tokens).view(np.chararray)
+		labels = np.asarray(labels).view(np.chararray)
+
+		# split tokens on empty lines into sentences for position tracking
+		# sentences = np.split(tokens,np.where(tokens=="\n")[0])
+
+		# now remove all empty lines
+		tokens = np.delete(tokens,np.where(tokens=="\n")[0])
+
+
+		self.logger.info("Compiling set of prefixes and suffixes")
+
+		# get comming prefixes
+		prefixes = []
+		for i in range(4):
+			prefixes += list(set([x[0:i+1] for x in tokens]))
+
+
+		# get comming suffixes
+		suffixes = []
+		for i in range(4):
+			suffixes += list(set([x[len(x)-(i+1):] for x in tokens]))
+
+
 		feats = [[]]
 
-		inst_vals = []
-		inst_labs = []
+		self.logger.info("Extracting Token Features")
 
-
-		f = open(file_path,'r')
-		for line in f.readlines():
-
-			content = line.split('\t',1)
-			if line == "\n":
-				feats.append([])
-				inst_vals.append('')
-				inst_labs.append('')
-
-			else:
-				token = str(content[0])
-				label = str(content[1].split("\n")[0])
-
-
-				inst_vals.append(token)
-				inst_labs.append(label)
-
+		for token in tokens:
+			token = str(token)
+			if token:
+				curr = []
 				if token in self.vocab:
-					curr = [self.vocab.index(token)]
+					curr.append(self.vocab.index(token.lower()))
 
-				for count, suff in enumerate(self.suffixes):
-					if token.endswith(suff):
+				for count, pre in enumerate(prefixes):
+					if token.endswith(pre):
 						curr.append(len(self.vocab)+count)
 						break
 
-				if self._isnum(token): curr.append(len(self.vocab)+len(self.suffixes))
-				if token[0].isupper(): curr.append(len(self.vocab)+len(self.suffixes)+1)
-				# feats.append([self.vocab.index(token),self._isnum(token)*1,token[0].isupper()*1])
-				feats.append(curr)
+				for count, suff in enumerate(suffixes):
+					if token.endswith(suff):
+						curr.append(len(self.vocab)+len(prefixes)+count)
+						break
 
-		f.close()
-		inst_vals = np.asarray(inst_vals).view(np.chararray)
-		inst_labs = np.asarray(inst_labs).view(np.chararray)
+
+				if self.isnum(token) or self.text2int(token):
+					curr.append(len(self.vocab)+len(prefixes)+len(suffixes))
+
+				if token[0].isupper(): curr.append(len(self.vocab)+len(prefixes)+len(suffixes)+1)
+				if token.isupper(): curr.append(len(self.vocab)+len(prefixes)+len(suffixes)+2)
+				feats.append(curr)
+			else:
+				feats.append([])
+
 		feats = np.asarray(feats[1:])
 
-		self._logger.info("Finalizing Feature Extraction")
+		self.logger.info("Finalizing Feature Extraction")
 
-		self._logger.info("Features Shape: " + str(feats.shape))
-		self._logger.info("Instnaces Shape: " + str(len(inst_vals)))
-		self._logger.info("Labels Shape: " + str(len(inst_labs)))
+		self.logger.info("Features Shape: " + str(feats.shape))
+		self.logger.info("Instnaces Shape: " + str(len(tokens)))
+		self.logger.info("Labels Shape: " + str(len(labels)))
 
-		return (feats, inst_labs, inst_vals)
+		return (feats, tokens, labels)
 
-	def _isnum(self,str):
+	def isnum(self,str):
 		if str.isdigit(): return True
-		if self._reg.match(str): return True
+		if self.reg.match(str): return True
 		return False
+
+
+	def text2int(self,textnum, numwords={}):
+		if not numwords:
+			units = [
+			"zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+			"nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+			"sixteen", "seventeen", "eighteen", "nineteen",
+			]
+
+			tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+
+			scales = ["hundred", "thousand", "million", "billion", "trillion"]
+
+			numwords["and"] = (1, 0)
+			for idx, word in enumerate(units):    numwords[word] = (1, idx)
+			for idx, word in enumerate(tens):     numwords[word] = (1, idx * 10)
+			for idx, word in enumerate(scales):   numwords[word] = (10 ** (idx * 3 or 2), 0)
+
+		current = result = 0
+		for word in textnum.split():
+			if word not in numwords:
+				return ""
+			scale, increment = numwords[word]
+			current = current * scale + increment
+			if scale > 100:
+				result += current
+				current = 0
+
+		return result + current
+
+
