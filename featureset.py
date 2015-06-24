@@ -8,7 +8,6 @@ import time
 
 '''
 Features:
- 
 vocab id
 common suffix id
 is digit
@@ -17,11 +16,10 @@ is capital
 '''
 class FeatureSet(object):
 
-	
+
 	def __init__(self, meta_data):
-		
+
 		self._reg = re.compile("^\d+((\,|\.)\d+)*$")
-		
 		logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 		self._logger = logging.getLogger(__name__)
 
@@ -33,7 +31,6 @@ class FeatureSet(object):
 	def extract_feats(self, file_path):
 
 		self._logger.info("Started Feature Extraction")
-		
 		feats = [[]]
 
 		inst_vals = []
@@ -43,7 +40,6 @@ class FeatureSet(object):
 		f = open(file_path,'r')
 		for line in f.readlines():
 
-			
 			content = line.split('\t',1)
 			if line == "\n":
 				feats.append([])
@@ -57,7 +53,9 @@ class FeatureSet(object):
 
 				inst_vals.append(token)
 				inst_labs.append(label)
-				curr = [self.vocab.index(token)]
+
+				if token in self.vocab:
+					curr = [self.vocab.index(token)]
 
 				for count, suff in enumerate(self.suffixes):
 					if token.endswith(suff):

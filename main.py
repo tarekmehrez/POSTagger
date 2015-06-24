@@ -35,15 +35,15 @@ def extract_feats(meta_data,feat_file):
 
 
 def train(results):
-	# get files 
+	# get files
 
 	vocab_file = results.vocab
 	labels_file = results.labels
 	train_file = results.train
 
 	logger.debug(	'Started training with options:'		+ "\n" +
-					'training file:	' + str(results.train) 	+ "\n" + 
-					'vocab file:	' + str(results.vocab)	+ "\n" + 
+					'training file:	' + str(results.train) 	+ "\n" +
+					'vocab file:	' + str(results.vocab)	+ "\n" +
 					'labels file:	' + str(results.labels)	+ "\n")
 
 
@@ -105,7 +105,7 @@ def test(results):
 	classifier = Perceptron(meta_data)
 	# else:
 		# classifier = LogisticRegression(meta_data)
-		
+
 	classifier.load_theta(model)
 	classifier.test(test_feats)
 
@@ -117,9 +117,9 @@ def evaluate(results):
 	pred_file = results.pred
 
 	logger.debug(	'Started evaluation with options:'		+ "\n" +
-					'gold file:		' + str(results.gold) 	+ "\n" + 
-					'pred file:		' + str(results.pred) 	+ "\n" + 
-					'vocab file:	' + str(results.vocab)	+ "\n" + 
+					'gold file:		' + str(results.gold) 	+ "\n" +
+					'pred file:		' + str(results.pred) 	+ "\n" +
+					'vocab file:	' + str(results.vocab)	+ "\n" +
 					'labels file:	' + str(results.labels)	+ "\n")
 
 
@@ -200,7 +200,6 @@ if results.train:
 		help_exit()
 	else:
 		train(results)
-		
 if results.test:
 	test(results)
 

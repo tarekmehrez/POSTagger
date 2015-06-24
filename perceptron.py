@@ -32,9 +32,9 @@ class Perceptron(object):
         inst_labels = feat_tuple[1]
         inst_vals = feat_tuple[2]
 
-        self._theta = 0.1 * np.random.randn(len(self.labels),self.feat_size) * 0
+        self._theta = 0.1 * np.random.randn(len(self.labels),self.feat_size)
 
-        for i in range(500):
+        for i in range(10):
             self._logger.info("training iteration: " + str(i))
 
             for count, instance in enumerate(feat_idx):
@@ -42,8 +42,6 @@ class Perceptron(object):
                 if not inst_vals[count]:
                     continue
                 else:
-
-
                     results = np.sum(self._theta[:,instance],axis=1)
 
                     label_idx = self.labels.index(inst_labels[count])
@@ -59,18 +57,18 @@ class Perceptron(object):
         feat_idx = feat_tuple[0]
         inst_labels = feat_tuple[1]
         inst_vals = feat_tuple[2]
-        
+
         f = open('data/pred.col','w')
 
         for count, instance in enumerate(feat_idx):
 
 
-            if not inst_vals[count]:                
+            if not inst_vals[count]:
                 f.write('\n')
                 continue
             else:
                 results = np.sum(self._theta[:,instance],axis=1)
- 
+
 
                 f.write(inst_vals[count] + "\t" + self.labels[np.argmax(results)] + "\n")
 
