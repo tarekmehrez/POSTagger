@@ -26,9 +26,6 @@ class FeatureSet(object):
 		self.vocab = meta_data[0]
 		self.labels = meta_data[1]
 
-
-
-
 	# FEATURES:
 	# word form (N)
 	# common prefixes (P)
@@ -51,16 +48,21 @@ class FeatureSet(object):
 		self.logger.info("Extracting tokens and sentences")
 		# get all tokens in the training file
 		with open(file_path) as file:
-			tokens = np.array([line.strip().decode('utf-8').split('\t',1)[0] for line in file])
+			tokens = [line.strip().decode('utf-8').split('\t',1)[0] for line in file]
 
 		with open(file_path) as file:
-			labels = np.array([line.strip().decode('utf-8').split('\t',1)[-1].split("\n")[0] for line in file])
+			labels = [line.strip().decode('utf-8').split('\t',1)[-1].split("\n")[0] for line in file]
 
 		tokens = np.asarray(tokens).view(np.chararray)
 		labels = np.asarray(labels).view(np.chararray)
 
 		# split tokens on empty lines into sentences for position tracking
-		# sentences = np.split(tokens,np.where(tokens=="\n")[0])
+		sentences = np.split(tokens,np.where(tokens=="\n")[0])
+		max_sent  = 0
+		for i in sentences:
+			if len(i) > max_sent:
+				max_sent = len(i)
+
 
 		# now remove all empty lines
 		tokens = np.delete(tokens,np.where(tokens=="\n")[0])
@@ -73,53 +75,97 @@ class FeatureSet(object):
 		for i in range(4):
 			prefixes += list(set([x[0:i+1] for x in tokens]))
 
+		self.logger.info("Prefixes size: " + str(len(prefixes)))
 
 		# get comming suffixes
 		suffixes = []
 		for i in range(4):
 			suffixes += list(set([x[len(x)-(i+1):] for x in tokens]))
 
+		self.logger.info("Suffixes size: " + str(len(suffixes)))
+		self.logger.info("Vocab size: " + str(len(self.vocab)))
 
-		feats = [[]]
+		feats = []
 
 		self.logger.info("Extracting Token Features")
-
-		for token in tokens:
+		position = -1
+		max_length = len(max(tokens, key=len))
+		for count,token in enumerate(tokens):
 			token = str(token)
-			if token:
-				curr = []
-				if token in self.vocab:
-					curr.append(self.vocab.index(token.lower()))
 
+			if token:
+				curr_dim = 0
+				position+=1
+				curr = []
+
+				# token form index
+				if count > 0 and tokens[count-1] in self.vocab: curr.append(self.vocab.index(tokens[count-1].lower()))
+				curr_dim += len(self.vocab)
+				if token in self.vocab: curr.append(curr_dim + self.vocab.index(token.lower()))
+				curr_dim += len(self.vocab)
+				if count < len(tokens)-1 and tokens[count+1] in self.vocab: curr.append(curr_dim + self.vocab.index(tokens[count+1].lower()))
+				curr_dim += len(self.vocab)
+
+				# prefix index
 				for count, pre in enumerate(prefixes):
 					if token.endswith(pre):
-						curr.append(len(self.vocab)+count)
+						curr.append(curr_dim+count)
 						break
-
+				curr_dim += len(prefixes)
+				# suffix index
 				for count, suff in enumerate(suffixes):
 					if token.endswith(suff):
-						curr.append(len(self.vocab)+len(prefixes)+count)
+						curr.append(curr_dim+count)
 						break
-
-
+				curr_dim += len(suffixes)
+				# is number
 				if self.isnum(token) or self.text2int(token):
-					curr.append(len(self.vocab)+len(prefixes)+len(suffixes))
+					curr.append(curr_dim)
+				curr_dim += 1
+				# is upper
+				if token[0].isupper(): curr.append(curr_dim)
+				curr_dim += 1
+				# is capitalized
+				if token.isupper(): curr.append(curr_dim)
+				curr_dim += 1
 
-				if token[0].isupper(): curr.append(len(self.vocab)+len(prefixes)+len(suffixes)+1)
-				if token.isupper(): curr.append(len(self.vocab)+len(prefixes)+len(suffixes)+2)
+				# length features
+				if count > 0: curr.append(curr_dim+len(tokens[count-1]))
+				curr_dim += max_length
+
+				curr.append(curr_dim+len(token))
+				curr_dim += max_length
+
+				if count < len(tokens)-1: curr.append(curr_dim+len(tokens[count+1]))
+				curr_dim += max_length
+
+				# position features
+				if position > 0: curr.append(curr_dim+position-1)
+				curr_dim += max_sent
+
+				curr.append(curr_dim+position)
+				curr_dim += max_sent
+
+				if position < len(tokens)-1: curr.append(curr_dim+position+1)
+				curr_dim += max_sent
+
+				# done writing feature indices
 				feats.append(curr)
+
+			# no token = "\n" -> sentence ends, new sentence
 			else:
 				feats.append([])
+				position = -1
 
-		feats = np.asarray(feats[1:])
+		feats = np.asarray(feats)
 
 		self.logger.info("Finalizing Feature Extraction")
 
-		self.logger.info("Features Shape: " + str(feats.shape))
-		self.logger.info("Instnaces Shape: " + str(len(tokens)))
-		self.logger.info("Labels Shape: " + str(len(labels)))
+		self.logger.info("Feature Dimensions: " + str(curr_dim))
+		self.logger.info("Instnaces Number: " + str(len(tokens)))
+		self.logger.info("Labels Number: " + str(len(labels)))
 
-		return (feats, tokens, labels)
+		return (feats, tokens, labels, curr_dim)
 
 	def isnum(self,str):
 		if str.isdigit(): return True
