@@ -35,20 +35,21 @@ class Perceptron(object):
         step_size = 0.01
         for i in range(10):
             self.logger.info("training iteration: " + str(i))
-
+            weights_copy = self.theta
             for count, instance in enumerate(feat_idx):
 
                 if not instance:
                     continue
                 else:
                     np.random.shuffle(instance)
-                    results = np.sum(self.theta[:,instance],axis=1)
+                    results = np.sum(weights_copy[:,instance],axis=1)
 
                     label_idx = self.labels.index(inst_labels[count])
 
                     for perc_count,pred in enumerate(results):
-                        if perc_count == label_idx and pred < 1: self.theta[perc_count][instance] += 1 * step_size
-                        if perc_count != label_idx and pred > 1: self.theta[perc_count][instance] -= 1 * step_size
+                        if perc_count == label_idx and pred < 1: weights_copy[perc_count][instance] += 1 * step_size
+                        if perc_count != label_idx and pred > 1: weights_copy[perc_count][instance] -= 1 * step_size
+            self.theta = weights_copy
             step_size -= 0.001
 
     def test(self,feat_tuple):
