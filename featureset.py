@@ -96,7 +96,8 @@ class FeatureSet(object):
 				curr_dim = 0
 				position+=1
 				curr = []
-
+				curr.append(0)
+				curr_dim += 1
 				# token form index
 				if count > 0 and tokens[count-1] in self.vocab: curr.append(self.vocab.index(tokens[count-1].lower()))
 				curr_dim += len(self.vocab)

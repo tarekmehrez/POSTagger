@@ -31,8 +31,8 @@ class Perceptron(object):
         inst_labels = feat_tuple[2]
         feat_size = feat_tuple[3]
 
-        self.theta = 0.1 * np.random.randn(len(self.labels),feat_size)
-
+        self.theta = 0.001 * np.random.randn(len(self.labels),feat_size)
+        step_size = 0.01
         for i in range(10):
             self.logger.info("training iteration: " + str(i))
 
@@ -47,9 +47,9 @@ class Perceptron(object):
                     label_idx = self.labels.index(inst_labels[count])
 
                     for perc_count,pred in enumerate(results):
-                        if perc_count == label_idx and pred < 1: self.theta[perc_count][instance] += 1
-                        if perc_count != label_idx and pred > 1: self.theta[perc_count][instance] -= 1
-
+                        if perc_count == label_idx and pred < 1: self.theta[perc_count][instance] += 1 * step_size
+                        if perc_count != label_idx and pred > 1: self.theta[perc_count][instance] -= 1 * step_size
+            step_size -= 0.001
 
     def test(self,feat_tuple):
         self.logger.info("Started testing Perceptron")
