@@ -57,13 +57,11 @@ class FeatureSet(object):
 		tokens = np.asarray(tokens).view(np.chararray)
 		labels = np.asarray(labels).view(np.chararray)
 
-		# split tokens on empty lines into sentences for position tracking
-		sentences = np.split(tokens,np.where(tokens=="\n")[0])
-		max_sent  = 0
-		for i in sentences:
-			if len(i) > max_sent:
-				max_sent = len(i)
-
+		# get length of longest sentence (for feature extraction)
+		breaks = np.where(tokens=="")[0]+1
+		breaks = np.insert(breaks,0,0)
+		diff = [x - breaks[i - 1] for i, x in enumerate(breaks)][1:]
+		max_sent = np.max(diff)
 
 		# now remove all empty lines
 		tokens = np.delete(tokens,np.where(tokens=="\n")[0])

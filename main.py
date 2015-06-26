@@ -89,8 +89,8 @@ def test(results):
 	meta_data= read_obj('meta_data')
 
 	if not os.path.exists('model/test.feats'):
-		logger.info("Done feature extraction for testing data, writing in test.feats")
 		test_feats = extract_feats(meta_data,test_file)
+		logger.info("Done feature extraction for testing data, writing in test.feats")
 		write_obj(test_feats,'test.feats')
 	else:
 		logger.info("test.feats already exists ... loading.")
