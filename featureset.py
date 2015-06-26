@@ -19,7 +19,8 @@ class FeatureSet(object):
 
 	def __init__(self, meta_data):
 
-		self.reg = re.compile("^\d+((\,|\.|\/)\d+)*$")
+		self.num_reg = re.compile("^\d+((\,|\.|\/)\d+)*$")
+		self.char_reg = re.compile("^(\,|\.|\:|\;|\!|\#|\$|\%|\&|\*|\(|\)|\{|\[|\]|\}|\?|\'\'|\'|\")+$")
 		logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 		self.logger = logging.getLogger(__name__)
 
@@ -129,6 +130,14 @@ class FeatureSet(object):
 				if token.isupper(): curr.append(curr_dim)
 				curr_dim += 1
 
+				# is abbreviation
+				if len(token) > 1 and token.endswith('.'): curr.append(curr_dim)
+				curr_dim += 1
+
+				# is special character
+				if self.char_reg.match(token): curr.append(curr_dim)
+				curr_dim += 1
+
 				# length features
 				if count > 0: curr.append(curr_dim+len(tokens[count-1]))
 				curr_dim += max_length
@@ -169,7 +178,7 @@ class FeatureSet(object):
 
 	def isnum(self,str):
 		if str.isdigit(): return True
-		if self.reg.match(str): return True
+		if self.num_reg.match(str): return True
 		return False
 
 
