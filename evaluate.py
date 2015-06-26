@@ -38,9 +38,11 @@ class Evaluator(object):
 		conf_matrix = np.zeros([len(self.labels),len(self.labels)])
 
 
+		for label in self.labels:
+			if label not in self.gold_labels:
+				self.labels.remove(label)
 
 		for row_count,should_be in enumerate(self.labels):
-
 			gold_indices = [i for i, x in enumerate(self.gold_labels) if x == should_be]
 
 			for predicted_as in gold_indices:
