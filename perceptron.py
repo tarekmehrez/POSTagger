@@ -41,6 +41,7 @@ class Perceptron(object):
                 if not instance:
                     continue
                 else:
+                    np.random.shuffle(instance)
                     results = np.sum(self.theta[:,instance],axis=1)
 
                     label_idx = self.labels.index(inst_labels[count])
