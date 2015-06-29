@@ -96,6 +96,8 @@ class FeatureSet(object):
 				curr_dim = 0
 				position+=1
 				curr = []
+
+				# bias value
 				curr.append(0)
 				curr_dim += 1
 				# token form index

@@ -44,14 +44,7 @@ class Evaluator(object):
 
 				predicted_label = self.pred_labels[predicted_as]
 
-				if predicted_label not in self.labels:
-					conf_matrix = np.resize(conf_matrix,(conf_matrix.shape[0]+1,conf_matrix.shape[1]+1))
-					self.labels.append(predicted_label)
-
 				column_count = self.labels.index(predicted_label)
-
-
-
 				conf_matrix[row_count, column_count] += 1
 
 

@@ -22,7 +22,7 @@ class Perceptron(object):
         self.labels = meta_data[1]
 
 
-    def train(self,feat_tuple,step):
+    def train(self,feat_tuple,step,iterations):
         self.logger.info("Started training Perceptron")
 
 
@@ -32,8 +32,8 @@ class Perceptron(object):
         feat_size = feat_tuple[3]
 
         self.theta = 0.001 * np.random.randn(len(self.labels),feat_size)
-        step_size = step
-        for i in range(10):
+        step_size = float(step)
+        for i in range(int(iterations)):
             self.logger.info("training iteration: " + str(i))
             weights_copy = self.theta
             for count, instance in enumerate(feat_idx):
@@ -50,7 +50,7 @@ class Perceptron(object):
                         if perc_count == label_idx and pred < 1: weights_copy[perc_count][instance] += 1 * step_size
                         if perc_count != label_idx and pred > 1: weights_copy[perc_count][instance] -= 1 * step_size
             self.theta = weights_copy
-            step_size -= step * 0.1
+            step_size -= float(step) * 0.1
 
     def test(self,feat_tuple):
         self.logger.info("Started testing Perceptron")

@@ -40,12 +40,20 @@ def train(results):
 	labels_file = results.labels
 	train_file = results.train
 	step = results.step
+	iterations = results.iter
 
+
+	if not step:
+		step = 0.01
+	if not iterations:
+		iterations = 10
 
 	logger.debug(	'Started training with options:'		+ "\n" +
-					'training file:	' + str(results.train) 	+ "\n" +
-					'vocab file:	' + str(results.vocab)	+ "\n" +
-					'labels file:	' + str(results.labels)	+ "\n")
+					'training file:	' + str(train_file) 	+ "\n" +
+					'step size: '	  + str(step)			+ "\n" +
+					'no. of iter: '	  + str(iterations)		+ "\n" +
+					'vocab file:	' + str(vocab_file)		+ "\n" +
+					'labels file:	' + str(labels_file)	+ "\n")
 
 
 
@@ -69,7 +77,7 @@ def train(results):
 
 	if not os.path.exists('model/model'):
 		classifier = Perceptron(meta_data)
-		classifier.train(train_feats,step)
+		classifier.train(train_feats,step,iterations)
 		logger.info("Done Training, model is written in model file")
 		model = classifier.get_theta()
 		write_obj(model, 'model')
@@ -149,6 +157,9 @@ parser.add_argument('--train', action='store', dest='train',
 parser.add_argument('--step', action='store', dest='step',
                     help='Decaying Step Size')
 
+parser.add_argument('--iter', action='store', dest='iter',
+                    help='Training iterations')
+
 parser.add_argument('--vocab', action='store', dest='vocab',
                     help='Vocab file')
 
@@ -194,12 +205,21 @@ if results.train and results.test:
 	print "You can only do training or testing at a time"
 	help_exit()
 
+
 if results.train:
 	if not results.vocab or not results.labels:
 		print "You have to specify the vocab and labels file"
 		help_exit()
+	elif results.step <1:
+		print "Step size should be greater than 1"
+		help_exit()
+	elif results.iter <1:
+		print "Number of iterations should be greater than 1"
+		help_exit()
 	else:
 		train(results)
+
+
 if results.test:
 	test(results)
 
@@ -214,8 +234,5 @@ if results.eval == 1:
 	else:
 		evaluate(results)
 
-if results.step <1:
-	print "Step size should be greater than 1"
-	help_exit()
 
 
