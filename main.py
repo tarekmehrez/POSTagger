@@ -39,6 +39,8 @@ def train(results):
 	vocab_file = results.vocab
 	labels_file = results.labels
 	train_file = results.train
+	step = results.step
+
 
 	logger.debug(	'Started training with options:'		+ "\n" +
 					'training file:	' + str(results.train) 	+ "\n" +
@@ -67,7 +69,7 @@ def train(results):
 
 	if not os.path.exists('model/model'):
 		classifier = Perceptron(meta_data)
-		classifier.train(train_feats)
+		classifier.train(train_feats,step)
 		logger.info("Done Training, model is written in model file")
 		model = classifier.get_theta()
 		write_obj(model, 'model')
@@ -144,6 +146,9 @@ parser.add_argument('--class', action='store', dest='classifier',
 parser.add_argument('--train', action='store', dest='train',
                     help='Training file')
 
+parser.add_argument('--step', action='store', dest='step',
+                    help='Decaying Step Size')
+
 parser.add_argument('--vocab', action='store', dest='vocab',
                     help='Vocab file')
 
@@ -209,6 +214,8 @@ if results.eval == 1:
 	else:
 		evaluate(results)
 
-
+if results.step <1:
+	print "Step size should be greater than 1"
+	help_exit()
 
 
