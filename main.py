@@ -49,7 +49,23 @@ def hmm_train(results):
 	else:
 		logger.info('model already exists, nothing to do!')
 
+def hmm_test(results):
 
+	test_file = results.test
+
+
+	logger.debug(	'Started testing HMM with options:'		+ "\n" +
+					'test file:	' + str(results.test) 		+ "\n")
+
+
+	logger.info("Loading model")
+	model = read_obj('hmm-model')
+
+
+	classifier = HMM()
+
+	classifier.load_theta(model)
+	classifier.test(test_file)
 
 def train(results):
 	# get files
@@ -124,10 +140,7 @@ def test(results):
 		logger.info("test.feats already exists ... loading.")
 		test_feats = read_obj('test.feats')
 
-	# if results.classifier == 0:
 	classifier = Perceptron(meta_data)
-	# else:
-		# classifier = LogisticRegression(meta_data)
 
 	classifier.load_theta(model)
 	classifier.test(test_feats)
@@ -213,9 +226,10 @@ if not os.path.exists('model'):
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 logger = logging.getLogger(__name__)
 
-if int(results.classifier) not in [0,1]:
-	print "Possible values for --class are 0 or 1"
-	help_exit()
+if not results.eval:
+	if int(results.classifier) not in [0,1]:
+		print "Possible values for --class are 0 or 1"
+		help_exit()
 
 
 if results.train and results.test:
@@ -225,6 +239,9 @@ if results.train and results.test:
 
 if results.train and int(results.classifier) == 1:
 	hmm_train(results)
+
+if results.test and int(results.classifier) == 1:
+	hmm_test(results)
 
 if results.train and int(results.classifier) != 1:
 	if not results.vocab or not results.labels:
@@ -240,7 +257,7 @@ if results.train and int(results.classifier) != 1:
 		train(results)
 
 
-if results.test:
+if results.test and int(results.classifier) == 0 :
 	test(results)
 
 if results.eval == 0 and (results.pred or results.gold):
