@@ -9,6 +9,7 @@ from featureset import FeatureSet
 from perceptron import Perceptron
 from evaluate import Evaluator
 from meta_data import MetaData
+from hmm import HMM
 ######## Org. functions ########
 
 def help_exit():
@@ -31,6 +32,23 @@ def read_obj(file_name):
 def extract_feats(meta_data,feat_file):
 	feature_set = FeatureSet(meta_data)
 	return feature_set.extract_feats(feat_file)
+
+def hmm_train(results):
+	train_file = results.train
+
+	logger.debug(	'Started training HMM with options:'	+ "\n" +
+					'training file:	' + str(train_file) 	+ "\n" )
+
+
+	if not os.path.exists('model/hmm-model'):
+		classifier = HMM()
+		classifier.train(train_file)
+		logger.info("Done Training, model is written in model file")
+		model = classifier.get_theta()
+		write_obj(model, 'hmm-model')
+	else:
+		logger.info('model already exists, nothing to do!')
+
 
 
 def train(results):
@@ -149,7 +167,7 @@ def evaluate(results):
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--class', action='store', dest='classifier',
-                    help='0: Perceptron, 1: Logistic Regression [default=0]')
+                    help='0: Perceptron, 1: HMM')
 
 parser.add_argument('--train', action='store', dest='train',
                     help='Training file')
@@ -186,27 +204,29 @@ parser.add_argument('--gold', action='store', dest='gold',
 results = parser.parse_args()
 
 
-
 if len(sys.argv)==1:
 	help_exit()
 
 if not os.path.exists('model'):
-    os.makedirs('model')
-
+	os.makedirs('model')
 
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 logger = logging.getLogger(__name__)
 
-# if results.classifier > 1 or results.classifier < 0:
-# 	print "Possible values for --class are 0 or 1"
-# 	help_exit()
+if int(results.classifier) not in [0,1]:
+	print "Possible values for --class are 0 or 1"
+	help_exit()
+
 
 if results.train and results.test:
 	print "You can only do training or testing at a time"
 	help_exit()
 
 
-if results.train:
+if results.train and int(results.classifier) == 1:
+	hmm_train(results)
+
+if results.train and int(results.classifier) != 1:
 	if not results.vocab or not results.labels:
 		print "You have to specify the vocab and labels file"
 		help_exit()
