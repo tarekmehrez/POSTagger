@@ -2,6 +2,7 @@ import numpy as np
 import logging
 import sys
 import re
+import operator
 from collections import defaultdict
 
 class HMM(object):
@@ -114,7 +115,6 @@ class HMM(object):
 
 
 
-
 		self.vocab = []
 		for i in freq:
 			content = i.strip().split(" ")
@@ -124,18 +124,36 @@ class HMM(object):
 		tokens = np.asarray(self.vocab).view(np.chararray)
 		self.vocab = set(self.vocab)
 
-		self.prefixes = []
-		for i in range(3):
-			self.prefixes += list(set([x[0:i+1] for x in tokens]))
+		self.prefixes = defaultdict(float)
+		self.suffixes = defaultdict(float)
 
-		self.suffixes = []
-		for i in range(3):
-			self.suffixes += list(set([x[len(x)-(i+1):] for x in tokens]))
+		for i in [2,3,4]:
+			for x in tokens:
+				self.prefixes[str(x[0:i])] += 1
+
+		self.prefixes = sorted(self.prefixes.items(), key=operator.itemgetter(1))[-100:]
+
+		for i in [2,3,4]:
+			for x in tokens:
+				self.suffixes[x[len(x)-(i):]] += 1
+
+		self.suffixes = sorted(self.suffixes.items(), key=operator.itemgetter(1))[-100:]
+
 		self.logger.info("Tokens with freq less than 5: " + str(len(self.vocab)))
 		self.logger.info("Common prefixes: " + str(len(self.prefixes)))
+		# print self.prefixes
+		# print self.suffixes
 		self.logger.info("Common suffixes: " + str(len(self.suffixes)))
 
 	def replace_token(self, token,previous):
+
+		for suff in self.suffixes:
+			if token.endswith(suff[0]):
+				return "is_"+str(suff[0])
+
+		for pre in self.prefixes:
+			if token.startswith(pre[0]):
+				return "is_"+str(pre[0])
 
 		if token[0].isupper(): return "is_upper"
 		if token.isupper(): return "is_capital"
@@ -144,13 +162,9 @@ class HMM(object):
 		if self.isnum(token) or self.text2int(token): return "is_num"
 		if re.match('^[\w-]+$', token) == None: return "is_special"
 
-		for pre in reversed(self.prefixes):
-			if token.startswith(pre):
-				return "is_"+str(pre)
 
-		for suff in reversed(self.suffixes):
-			if token.endswith(suff):
-				return "is_"+str(suff)
+
+
 
 		if token.islower(): return "is_lower"
 
