@@ -232,21 +232,10 @@ if results.train and results.test:
 	help_exit()
 
 
-# train
+
 
 if not os.path.exists('model'):
 	os.makedirs('model')
-
-if results.eval:
-	if not (results.pred and results.gold and results.vocab and results.labels):
-		print "Predictions, gold annotations, vocab & labels files must be specified when eval is set to 1"
-		help_exit()
-	else:
-		evaluate(results)
-
-elif int(results.classifier) not in [0,1]:
-	print "Possible values for --class are 0 or 1"
-	help_exit()
 
 
 if results.train:
@@ -266,7 +255,6 @@ if results.train:
 			help_exit()
 		else:
 			train(results)
-# test
 
 elif results.test:
 	if int(results.classifier) == 1:
@@ -274,8 +262,13 @@ elif results.test:
 	else:
 		test(results)
 
-# eval
 
+elif results.eval:
+	if not (results.pred and results.gold and results.vocab and results.labels):
+		print "Predictions, gold annotations, vocab & labels files must be specified when eval is set to 1"
+		help_exit()
+	else:
+		evaluate(results)
 
 
 

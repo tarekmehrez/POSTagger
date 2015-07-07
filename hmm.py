@@ -141,8 +141,6 @@ class HMM(object):
 
 		self.logger.info("Tokens with freq less than 5: " + str(len(self.vocab)))
 		self.logger.info("Common prefixes: " + str(len(self.prefixes)))
-		# print self.prefixes
-		# print self.suffixes
 		self.logger.info("Common suffixes: " + str(len(self.suffixes)))
 
 	def replace_token(self, token,previous):
