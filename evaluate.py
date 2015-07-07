@@ -35,6 +35,11 @@ class Evaluator(object):
 	def evaluate(self):
 
 		self._logger.info("Starting evaluation")
+
+		for i in self.labels:
+			if i not in self.gold_labels:
+				self.labels.remove(i)
+
 		conf_matrix = np.zeros([len(self.labels),len(self.labels)])
 
 		for row_count,should_be in enumerate(self.labels):

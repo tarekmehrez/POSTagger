@@ -5,6 +5,9 @@ import re
 import logging
 import sys
 import time
+from collections import defaultdict
+import operator
+
 
 '''
 Features:
@@ -52,10 +55,10 @@ class FeatureSet(object):
 			tokens = [line.strip().decode('utf-8').split('\t',1)[0] for line in file]
 
 		with open(file_path) as file:
-			labels = [line.strip().decode('utf-8').split('\t',1)[-1].split("\n")[0] for line in file]
+			tags = [line.strip().decode('utf-8').split('\t',1)[-1].split("\n")[0] for line in file]
 
 		tokens = np.asarray(tokens).view(np.chararray)
-		labels = np.asarray(labels).view(np.chararray)
+		tags = np.asarray(tags).view(np.chararray)
 
 		# get length of longest sentence (for feature extraction)
 		breaks = np.where(tokens=="")[0]+1
@@ -69,17 +72,26 @@ class FeatureSet(object):
 
 		self.logger.info("Compiling set of prefixes and suffixes")
 
-		# get comming prefixes
-		prefixes = []
-		for i in range(4):
-			prefixes += list(set([x[0:i+1] for x in tokens]))
 
+
+		prefixes = defaultdict(float)
+		suffixes = defaultdict(float)
+
+		# get common prefixes
+		for i in [2,3,4,5]:
+			for x in tokens:
+				prefixes[str(x[0:i])] += 1
+
+		prefixes = sorted(prefixes.items(), key=operator.itemgetter(1))[-200:]
 		self.logger.info("Prefixes size: " + str(len(prefixes)))
 
-		# get comming suffixes
-		suffixes = []
-		for i in range(4):
-			suffixes += list(set([x[len(x)-(i+1):] for x in tokens]))
+		# get common suffixes
+		for i in [2,3,4,5]:
+			for x in tokens:
+				suffixes[x[len(x)-(i):]] += 1
+
+		suffixes = sorted(suffixes.items(), key=operator.itemgetter(1))[-200:]
+
 
 		self.logger.info("Suffixes size: " + str(len(suffixes)))
 		self.logger.info("Vocab size: " + str(len(self.vocab)))
@@ -100,38 +112,50 @@ class FeatureSet(object):
 				# bias value
 				curr.append(0)
 				curr_dim += 1
+
+				label = self.labels.index(tags[count])
+				curr.append(label)
+				curr_dim += len(self.labels)
+
 				# token form index
 				if count > 0 and tokens[count-1] in self.vocab: curr.append(self.vocab.index(tokens[count-1].lower()))
 				curr_dim += len(self.vocab)
+
+
+				if count > 1 and tokens[count-2] in self.vocab: curr.append(self.vocab.index(tokens[count-2].lower()))
+				curr_dim += len(self.vocab)
+
 				if token in self.vocab: curr.append(curr_dim + self.vocab.index(token.lower()))
 				curr_dim += len(self.vocab)
-				if count < len(tokens)-1 and tokens[count+1] in self.vocab: curr.append(curr_dim + self.vocab.index(tokens[count+1].lower()))
-				curr_dim += len(self.vocab)
+
 
 				# prefix index
 				for count, pre in enumerate(prefixes):
-					if token.startswith(pre):
+					if token.startswith(pre[0]):
 						curr.append(curr_dim+count)
 						break
 				curr_dim += len(prefixes)
 				# suffix index
 				for count, suff in enumerate(suffixes):
-					if token.endswith(suff):
+					if token.endswith(suff[0]):
 						curr.append(curr_dim+count)
 						break
 				curr_dim += len(suffixes)
+
 				# is number
 				if self.isnum(token) or self.text2int(token):
 					curr.append(curr_dim)
 				curr_dim += 1
+
 				# is upper
 				if token[0].isupper(): curr.append(curr_dim)
 				curr_dim += 1
+
 				# is capitalized
 				if token.isupper(): curr.append(curr_dim)
 				curr_dim += 1
 
-				# is abbreviation
+				# is abbreviated
 				if len(token) > 1 and token.endswith('.'): curr.append(curr_dim)
 				curr_dim += 1
 
@@ -139,24 +163,20 @@ class FeatureSet(object):
 				if self.char_reg.match(token): curr.append(curr_dim)
 				curr_dim += 1
 
-				# length features
-				if count > 0: curr.append(curr_dim+len(tokens[count-1]))
-				curr_dim += max_length
+				# contains hyphen
+				if '-' in token: curr.append(curr_dim)
+				curr_dim += 1
 
+				# contains digit
+				if contains_digits(token):  curr.append(curr_dim)
+				curr_dim += 1
+
+				# length features
 				curr.append(curr_dim+len(token))
 				curr_dim += max_length
 
-				if count < len(tokens)-1: curr.append(curr_dim+len(tokens[count+1]))
-				curr_dim += max_length
-
 				# position features
-				if position > 0: curr.append(curr_dim+position-1)
-				curr_dim += max_sent
-
 				curr.append(curr_dim+position)
-				curr_dim += max_sent
-
-				if position < len(tokens)-1: curr.append(curr_dim+position+1)
 				curr_dim += max_sent
 
 				# done writing feature indices
@@ -173,9 +193,13 @@ class FeatureSet(object):
 
 		self.logger.info("Feature Dimensions: " + str(curr_dim))
 		self.logger.info("Instnaces Number: " + str(len(tokens)))
-		self.logger.info("Labels Number: " + str(len(labels)))
+		self.logger.info("Labels Number: " + str(len(tags)))
 
-		return (feats, tokens, labels, curr_dim)
+		return (feats, tokens, tags, curr_dim)
+
+	def contains_digits(d):
+		_digits = re.compile('\d')
+		return bool(_digits.search(d))
 
 	def isnum(self,str):
 		if str.isdigit(): return True
