@@ -50,7 +50,8 @@ class Evaluator(object):
 
 
 		f = open('eval.out','w')
-		for i in conf_matrix:
+		for count,i in enumerate(conf_matrix):
+			f.write(str(self.labels[count]) + " ")
 			for j in i:
 				f.write(str(int(j)) + " ")
 			f.write("\n")

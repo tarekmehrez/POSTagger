@@ -1,7 +1,7 @@
 import numpy as np
 import logging
 import sys
-
+import re
 from collections import defaultdict
 
 class HMM(object):
@@ -11,12 +11,15 @@ class HMM(object):
 		self.logger = logging.getLogger(__name__)
 		self.logger.info("Initializing HMM")
 
+		self.num_reg = re.compile("^\d+((\,|\.|\/)\d+)*$")
 
-	def train(self, train_file):
 
+	def train(self, train_file,freq_file):
+
+		self.prepare_vocab(freq_file)
 		self.logger.info("Started HMM Training")
 
-
+		count = 0
 		context = defaultdict(float)
 		trans = defaultdict(float)
 		emit = defaultdict(float)
@@ -29,6 +32,8 @@ class HMM(object):
 
 			if line != '\n':
 				token = content[0]
+				if token in self.vocab:
+					token = str(self.replace_token(token,previous))
 				tag = content[1].split('\n')[0]
 				trans[previous+"_"+tag] += 1
 				context[tag] += 1
@@ -40,22 +45,12 @@ class HMM(object):
 				context[previous] += 1
 
 		self.logger.info("Printing transitions")
-		# for key in trans:
-		# 	prob = trans[key]/context[key.split('_')[0]]
-		# 	if prob > 1:
-		# 		print key, prob
-		# 		sys.exit(1)
-		# 	self.logger.info("Transition:" + str(key) + ": " + str(trans[key]/context[key.split('_')[0]]))
-
-		# for key in emit:
-		# 	if prob > 1:
-		# 		print key, prob
-		# 		sys.exit(1)
-		# 	self.logger.info("Emission:" + str(key) + ": " + str(emit[key]/context[key.split('_')[0]]))
 
 		self.theta = [context,trans,emit]
 
-	def test(self,test_file):
+	def test(self,test_file,freq_file):
+		self.prepare_vocab(freq_file)
+
 		self.logger.info("Started HMM Testing")
 
 		previous = '<s>'
@@ -76,11 +71,17 @@ class HMM(object):
 			if line != '\n':
 				token = content[0]
 
+				if token in self.vocab:
+					token = str(self.replace_token(token,previous))
+
 				curr = [1] * len(tags)
 
 
 				for i,tag in enumerate(tags):
-					curr[i] *= prev_prob * (trans[previous+"_"+tag]/context[previous]) * (emit[tag+"_"+token]/context[tag])
+					emission = emit[tag+"_"+token]
+					if not emission:
+						emission = 10**-5
+					curr[i] *= prev_prob * (trans[previous+"_"+tag]/context[previous]) * (emission/context[tag])
 
 
 				curr = np.asarray(curr)
@@ -105,3 +106,86 @@ class HMM(object):
 
 	def load_theta(self, theta):
 		self.theta = theta
+
+	def prepare_vocab(self,freq_file):
+
+		with open(freq_file) as file:
+			freq = [line.strip().decode('utf-8') for line in file]
+
+
+
+
+		self.vocab = []
+		for i in freq:
+			content = i.strip().split(" ")
+			if int(content[0]) <= 5:
+				self.vocab.append(content[1])
+
+		tokens = np.asarray(self.vocab).view(np.chararray)
+		self.vocab = set(self.vocab)
+
+		self.prefixes = []
+		for i in range(3):
+			self.prefixes += list(set([x[0:i+1] for x in tokens]))
+
+		self.suffixes = []
+		for i in range(3):
+			self.suffixes += list(set([x[len(x)-(i+1):] for x in tokens]))
+		self.logger.info("Tokens with freq less than 5: " + str(len(self.vocab)))
+		self.logger.info("Common prefixes: " + str(len(self.prefixes)))
+		self.logger.info("Common suffixes: " + str(len(self.suffixes)))
+
+	def replace_token(self, token,previous):
+
+		if token[0].isupper(): return "is_upper"
+		if token.isupper(): return "is_capital"
+		if len(token) > 1 and token.endswith('.'): return "is_abbrev"
+		if previous  == '<s>': return "is_first"
+		if self.isnum(token) or self.text2int(token): return "is_num"
+		if re.match('^[\w-]+$', token) == None: return "is_special"
+
+		for pre in reversed(self.prefixes):
+			if token.startswith(pre):
+				return "is_"+str(pre)
+
+		for suff in reversed(self.suffixes):
+			if token.endswith(suff):
+				return "is_"+str(suff)
+
+		if token.islower(): return "is_lower"
+
+	def isnum(self,str):
+		if str.isdigit(): return True
+		if self.num_reg.match(str): return True
+		return False
+
+
+	def text2int(self,textnum, numwords={}):
+		if not numwords:
+			units = [
+			"zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+			"nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+			"sixteen", "seventeen", "eighteen", "nineteen",
+			]
+
+			tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+
+			scales = ["hundred", "thousand", "million", "billion", "trillion"]
+
+			numwords["and"] = (1, 0)
+			for idx, word in enumerate(units):    numwords[word] = (1, idx)
+			for idx, word in enumerate(tens):     numwords[word] = (1, idx * 10)
+			for idx, word in enumerate(scales):   numwords[word] = (10 ** (idx * 3 or 2), 0)
+
+		current = result = 0
+		for word in textnum.split():
+			if word not in numwords:
+				return ""
+			scale, increment = numwords[word]
+			current = current * scale + increment
+			if scale > 100:
+				result += current
+				current = 0
+
+		return result + current
+

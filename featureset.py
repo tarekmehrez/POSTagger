@@ -110,7 +110,7 @@ class FeatureSet(object):
 
 				# prefix index
 				for count, pre in enumerate(prefixes):
-					if token.endswith(pre):
+					if token.startswith(pre):
 						curr.append(curr_dim+count)
 						break
 				curr_dim += len(prefixes)

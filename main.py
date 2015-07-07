@@ -35,14 +35,16 @@ def extract_feats(meta_data,feat_file):
 
 def hmm_train(results):
 	train_file = results.train
+	freq_file = results.freq
 
 	logger.debug(	'Started training HMM with options:'	+ "\n" +
-					'training file:	' + str(train_file) 	+ "\n" )
+					'training file:	' + str(train_file) 	+ "\n" +
+					'frequency file:' + str(freq_file)		+ "\n")
 
 
 	if not os.path.exists('model/hmm-model'):
 		classifier = HMM()
-		classifier.train(train_file)
+		classifier.train(train_file,freq_file)
 		logger.info("Done Training, model is written in model file")
 		model = classifier.get_theta()
 		write_obj(model, 'hmm-model')
@@ -52,11 +54,12 @@ def hmm_train(results):
 def hmm_test(results):
 
 	test_file = results.test
+	freq_file = results.freq
 
 
 	logger.debug(	'Started testing HMM with options:'		+ "\n" +
-					'test file:	' + str(results.test) 		+ "\n")
-
+					'test file:	'		+ str(results.test) + "\n" +
+					'frequency file:' 	+ str(freq_file)	+ "\n")
 
 	logger.info("Loading model")
 	model = read_obj('hmm-model')
@@ -65,7 +68,7 @@ def hmm_test(results):
 	classifier = HMM()
 
 	classifier.load_theta(model)
-	classifier.test(test_file)
+	classifier.test(test_file,freq_file)
 
 def train(results):
 	# get files
@@ -192,10 +195,14 @@ parser.add_argument('--iter', action='store', dest='iter',
                     help='Training iterations')
 
 parser.add_argument('--vocab', action='store', dest='vocab',
-                    help='Vocab file')
+                    help='Vocab file - For Perceptron Training & Evaluation')
 
 parser.add_argument('--labels', action='store', dest='labels',
-                    help='Labels file')
+                    help='Labels file - For Perceptron Training & Evaluation')
+
+
+parser.add_argument('--freq', action='store', dest='freq',
+                    help='Frequency file - For HMM Training')
 
 
 parser.add_argument('--test', action='store', dest='test',
@@ -212,64 +219,66 @@ parser.add_argument('--gold', action='store', dest='gold',
                     help='In case eval was set to 1: Gold Standard File')
 
 
-
-
-results = parser.parse_args()
-
-
-if len(sys.argv)==1:
-	help_exit()
-
-if not os.path.exists('model'):
-	os.makedirs('model')
-
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 logger = logging.getLogger(__name__)
 
-if not results.eval:
-	if int(results.classifier) not in [0,1]:
-		print "Possible values for --class are 0 or 1"
-		help_exit()
 
+results = parser.parse_args()
+if len(sys.argv)==1:
+	help_exit()
 
 if results.train and results.test:
 	print "You can only do training or testing at a time"
 	help_exit()
 
 
-if results.train and int(results.classifier) == 1:
-	hmm_train(results)
+# train
 
-if results.test and int(results.classifier) == 1:
-	hmm_test(results)
+if not os.path.exists('model'):
+	os.makedirs('model')
 
-if results.train and int(results.classifier) != 1:
-	if not results.vocab or not results.labels:
-		print "You have to specify the vocab and labels file"
-		help_exit()
-	elif results.step <1:
-		print "Step size should be greater than 1"
-		help_exit()
-	elif results.iter <1:
-		print "Number of iterations should be greater than 1"
-		help_exit()
-	else:
-		train(results)
-
-
-if results.test and int(results.classifier) == 0 :
-	test(results)
-
-if results.eval == 0 and (results.pred or results.gold):
-	print "Predictions, gold annotations files could be specified only if eval is set to 1, to evaluate the classifier"
-	help_exit()
-
-if results.eval == 1:
+if results.eval:
 	if not (results.pred and results.gold and results.vocab and results.labels):
 		print "Predictions, gold annotations, vocab & labels files must be specified when eval is set to 1"
 		help_exit()
 	else:
 		evaluate(results)
+
+elif int(results.classifier) not in [0,1]:
+	print "Possible values for --class are 0 or 1"
+	help_exit()
+
+
+if results.train:
+
+	if int(results.classifier) == 1:
+		hmm_train(results)
+
+	else:
+		if not results.vocab or not results.labels:
+			print "You have to specify the vocab and labels file"
+			help_exit()
+		elif results.step <1:
+			print "Step size should be greater than 1"
+			help_exit()
+		elif results.iter <1:
+			print "Number of iterations should be greater than 1"
+			help_exit()
+		else:
+			train(results)
+# test
+
+elif results.test:
+	if int(results.classifier) == 1:
+		hmm_test(results)
+	else:
+		test(results)
+
+# eval
+
+
+
+
 
 
 
