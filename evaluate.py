@@ -36,9 +36,6 @@ class Evaluator(object):
 
 		self._logger.info("Starting evaluation")
 
-		for i in self.labels:
-			if i not in self.gold_labels:
-				self.labels.remove(i)
 
 		conf_matrix = np.zeros([len(self.labels),len(self.labels)])
 
@@ -48,7 +45,7 @@ class Evaluator(object):
 			for predicted_as in gold_indices:
 
 				predicted_label = self.pred_labels[predicted_as]
-
+				print predicted_label
 				column_count = self.labels.index(predicted_label)
 				conf_matrix[row_count, column_count] += 1
 
@@ -100,5 +97,7 @@ class Evaluator(object):
 
 
 		f.close()
+		self._logger.info("Done evaluation")
+
 
 

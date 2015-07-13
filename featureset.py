@@ -23,7 +23,7 @@ class FeatureSet(object):
 	def __init__(self, meta_data):
 
 		self.num_reg = re.compile("^\d+((\,|\.|\/)\d+)*$")
-		self.char_reg = re.compile("^(\,|\.|\:|\;|\!|\#|\$|\%|\&|\*|\(|\)|\{|\[|\]|\}|\?|\'\'|\'|\")+$")
+		self.char_reg = re.compile("^(\,|\.|\:|\;|\!|\#|\$|\%|\&|\*|\(|\)|\{|\[|\]|\}|\?|@|\'\'|\'|\"|\`|\\\)+$")
 		logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 		self.logger = logging.getLogger(__name__)
 
@@ -113,21 +113,23 @@ class FeatureSet(object):
 				curr.append(0)
 				curr_dim += 1
 
-				label = self.labels.index(tags[count])
-				curr.append(label)
-				curr_dim += len(self.labels)
-
 				# token form index
 				if count > 0 and tokens[count-1] in self.vocab: curr.append(self.vocab.index(tokens[count-1].lower()))
 				curr_dim += len(self.vocab)
 
-
 				if count > 1 and tokens[count-2] in self.vocab: curr.append(self.vocab.index(tokens[count-2].lower()))
 				curr_dim += len(self.vocab)
+
 
 				if token in self.vocab: curr.append(curr_dim + self.vocab.index(token.lower()))
 				curr_dim += len(self.vocab)
 
+
+				if count < len(tokens)-1 and tokens[count+1] in self.vocab: curr.append(curr_dim + self.vocab.index(tokens[count+1].lower()))
+				curr_dim += len(self.vocab)
+
+				if count < len(tokens)-2 and tokens[count+2] in self.vocab: curr.append(curr_dim + self.vocab.index(tokens[count+1].lower()))
+				curr_dim += len(self.vocab)
 
 				# prefix index
 				for count, pre in enumerate(prefixes):
@@ -168,7 +170,7 @@ class FeatureSet(object):
 				curr_dim += 1
 
 				# contains digit
-				if contains_digits(token):  curr.append(curr_dim)
+				if self.contains_digits(token):  curr.append(curr_dim)
 				curr_dim += 1
 
 				# length features
@@ -197,7 +199,7 @@ class FeatureSet(object):
 
 		return (feats, tokens, tags, curr_dim)
 
-	def contains_digits(d):
+	def contains_digits(self,d):
 		_digits = re.compile('\d')
 		return bool(_digits.search(d))
 
