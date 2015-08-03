@@ -112,16 +112,6 @@ def train(results):
 		logger.info("train.feats already exists ... loading.")
 		train_feats = read_obj('train.feats')
 
-	if not os.path.exists('model/model'):
-		classifier = Perceptron(meta_data)
-		classifier.train(train_feats,step,iterations)
-		logger.info("Done Training, model is written in model file")
-		model = classifier.get_theta()
-		write_obj(model, 'model')
-	else:
-		logger.info('model already exists, nothing to do!')
-
-
 def test(results):
 
 	test_file = results.test
