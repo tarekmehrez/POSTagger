@@ -1,11 +1,14 @@
+from collections import defaultdict
+
+
 class Token(object):
 
-	def __init__(self,form):
-		self.feats = {}
-		self.feats["FORM"] = form
+	def __init__(self):
+		self.feats = defaultdict(float)
 
-	def set_feat(self,feat,val):
-		self.feats[feat] = val
+
+	def set_feat(self,feat):
+		self.feats[feat] = 1
 
 	def get_feats(self):
 		return self.feats

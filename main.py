@@ -6,7 +6,7 @@ import os.path
 
 
 from featureset import FeatureSet
-from perceptron import Perceptron
+from perceptron_classifier import PerceptronClassifier
 from evaluate import Evaluator
 from meta_data import MetaData
 from hmm import HMM
@@ -76,8 +76,8 @@ def train(results):
 	vocab_file = results.vocab
 	labels_file = results.labels
 	train_file = results.train
-	step = results.step
-	iterations = results.iter
+	step = float(results.step)
+	iterations = int(results.iter)
 
 
 	if not step:
@@ -112,6 +112,16 @@ def train(results):
 		logger.info("train.feats already exists ... loading.")
 		train_feats = read_obj('train.feats')
 
+	if not os.path.exists('model/model'):
+		classifier = PerceptronClassifier(meta_data)
+		classifier.train(train_feats,step,iterations)
+		logger.info("Done Training, model is written in model file")
+		model = classifier.get_theta()
+		write_obj(model, 'model')
+	else:
+		logger.info('model already exists, nothing to do!')
+
+
 def test(results):
 
 	test_file = results.test
@@ -133,7 +143,7 @@ def test(results):
 		logger.info("test.feats already exists ... loading.")
 		test_feats = read_obj('test.feats')
 
-	classifier = Perceptron(meta_data)
+	classifier = PerceptronClassifier(meta_data)
 
 	classifier.load_theta(model)
 	classifier.test(test_feats)

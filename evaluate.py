@@ -45,7 +45,7 @@ class Evaluator(object):
 			for predicted_as in gold_indices:
 
 				predicted_label = self.pred_labels[predicted_as]
-				print predicted_label
+				# print predicted_label
 				column_count = self.labels.index(predicted_label)
 				conf_matrix[row_count, column_count] += 1
 
