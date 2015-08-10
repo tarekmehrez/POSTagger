@@ -8,12 +8,12 @@ class Perceptron(object):
 
 	def inc_weight(self,keys,step):
 		for i in keys:
-			self.weights[i] += 1
+			self.weights[i] += 1 * step
 		self.bias += 0.1
 
 	def dec_weight(self,keys,step):
 		for i in keys:
-			self.weights[i] -= 1
+			self.weights[i] -= 1 * step
 		self.bias -= 0.1
 
 	def activate(self,keys):

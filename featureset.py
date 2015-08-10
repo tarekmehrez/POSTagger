@@ -26,8 +26,6 @@ class FeatureSet(object):
 
 
 		self.logger.info("Started Feature Extraction")
-		self.logger.info("Extracting tokens and sentences")
-
 
 		# get all tokens in the training file
 		with open(file_path) as file:
@@ -50,18 +48,22 @@ class FeatureSet(object):
 			if token:
 
 
+
 				curr_token = Token()
+
 				# token form
-				curr_token.set_feat("FORM_"+str(self.vocab.index(token.lower())))
+				if tokens[count] in self.vocab: curr_token.set_feat("FORM_"+str(self.vocab.index(token.lower())))
 
 				# prev token form
 				if tokens[count-1]:
-					curr_token.set_feat("PREV_FORM_"+str(self.vocab.index(tokens[count-1].lower())))
+					if tokens[count-1] in self.vocab:
+						curr_token.set_feat("PREV_FORM_"+str(self.vocab.index(tokens[count-1].lower())))
 				else:
 					curr_token.set_feat("IS_FIRST")
 				# next token form
 				if tokens[count+1]:
-					curr_token.set_feat("NEXT_FORM_"+str(self.vocab.index(tokens[count+1].lower())))
+					if tokens[count+1] in self.vocab:
+						curr_token.set_feat("NEXT_FORM_"+str(self.vocab.index(tokens[count+1].lower())))
 				else:
 					curr_token.set_feat("IS_LAST")
 

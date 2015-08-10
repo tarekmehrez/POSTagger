@@ -52,7 +52,7 @@ class PerceptronClassifier(object):
                         if self.labels[idx] != gold_label and result == 1: self.perceptrons[idx].dec_weight(current_feats,step)
 
             self.logger.info("Correct/Incorrect Classifications: "+ str(correct) + "/" + str(wrong))
-            step -= step * (0.1/5)
+            step -= step * 0.1
 
     def test(self,feat_tuple):
         self.logger.info("Started testing Perceptron")
