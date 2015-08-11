@@ -6,7 +6,7 @@ from perceptron import Perceptron
 class PerceptronClassifier(object):
 
 
-    def __init__(self,input_file,feats_file,labels_file):
+    def __init__(self,input_file,feats,labels_file):
 
         logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
         self.logger = logging.getLogger(__name__)
@@ -15,9 +15,7 @@ class PerceptronClassifier(object):
         with open(labels_file) as file:
             self.labels_set = [line.strip().decode('utf-8').split('\n',1)[0] for line in file]
 
-        with open(feats_file) as file:
-            self.feats = [line.strip().decode('utf-8').split('\n',1)[0] for line in file]
-
+        self.feats = feats
 
         with open(input_file) as file:
             self.tokens = [line.strip().decode('utf-8').split('\t',1)[0] for line in file]

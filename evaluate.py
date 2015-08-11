@@ -32,8 +32,14 @@ class Evaluator(object):
 
 		self._logger.info("Starting evaluation")
 
-
+		print len(self.labels_set)
+		for i in self.labels_set:
+			if i not in self.gold_labels and i not in self.pred_labels:
+				self.labels_set.remove(i)
+		print len(self.labels_set)
 		conf_matrix = np.zeros([len(self.labels_set),len(self.labels_set)])
+
+
 
 		for row_count,should_be in enumerate(self.labels_set):
 			gold_indices = [i for i, x in enumerate(self.gold_labels) if x == should_be]

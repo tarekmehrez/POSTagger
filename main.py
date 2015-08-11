@@ -29,7 +29,7 @@ def read_obj(file_name):
 
 def extract_feats(input_file, output_file):
 	feature_set = FeatureSet()
-	if not os.path.exists('model/vocab'):
+	if not os.path.exists('models/vocab'):
 		feature_set.extract_feats(input_file,output_file,{})
 	else:
 		vocab = read_obj('vocab')

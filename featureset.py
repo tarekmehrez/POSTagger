@@ -16,21 +16,22 @@ class FeatureSet(object):
 
 	def extract_feats(self, input_file,output_file,vocab):
 
-		self.logger.info("Started Feature Extraction")
-
 		with open(input_file) as file:
 			tokens = [line.strip().decode('utf-8').split('\t',1)[0] for line in file]
 
 
 		file = open(output_file, 'wb')
 		training = vocab == {}
+		if training:
+			self.logger.info("Started Feature Extraction for training data")
+		else:
+			self.logger.info("Started Feature Extraction for testing data")
 		idx = 0
 		for count,token in enumerate(tokens):
 			token = str(token)
 
 			if token:
 				curr_feats = []
-
 
 
 				if training:
