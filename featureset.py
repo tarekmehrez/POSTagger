@@ -23,35 +23,53 @@ class FeatureSet(object):
 
 
 		file = open(output_file, 'wb')
-		training = vocab == []
-
+		training = vocab == {}
+		idx = 0
 		for count,token in enumerate(tokens):
 			token = str(token)
 
 			if token:
 				curr_feats = []
 
-				# token form
-				if training and token not in vocab:
-					vocab.append(token.lower())
-				curr_feats.append("FORM_"+str(vocab.index(token.lower())))
 
-				# prev token form
-				if tokens[count-1]:
-					if training and tokens[count-1] not in vocab:
-						vocab.append(tokens[count-1].lower())
-					curr_feats.append("PREV_FORM_"+str(vocab.index(tokens[count-1].lower())))
+
+				if training:
+
+					if token.lower() not in vocab:
+						vocab[token.lower()] = idx
+						idx += 1
+					curr_feats.append("FORM_"+ str(vocab[token.lower()]))
+
+					if tokens[count-1]:
+						if tokens[count-1].lower() not in vocab:
+							vocab[tokens[count-1].lower()] = idx
+							idx += 1
+						curr_feats.append("PREV_FORM_"+str(vocab[tokens[count-1].lower()]))
+					else:
+						curr_feats.append("IS_FIRST")
+
+					if tokens[count+1]:
+						if tokens[count+1].lower() not in vocab:
+							vocab[tokens[count+1].lower()] = idx
+							idx += 1
+						curr_feats.append("NEXT_FORM_"+str(vocab[tokens[count+1].lower()]))
+					else:
+						curr_feats.append("IS_FIRST")
+
 
 				else:
-					curr_feats.append("IS_FIRST")
+					if token.lower() in vocab: curr_feats.append("FORM_"+ str(vocab[token.lower()]))
+					if tokens[count-1]:
+						if tokens[count-1].lower() in vocab:
+							curr_feats.append("PREV_FORM_"+str(vocab[tokens[count-1].lower()]))
+					else:
+						curr_feats.append("IS_FIRST")
 
-				# next token form
-				if tokens[count+1]:
-					if training and tokens[count+1] not in vocab:
-						vocab.append(tokens[count+1].lower())
-					curr_feats.append("NEXT_FORM_"+str(vocab.index(tokens[count+1].lower())))
-				else:
-					curr_feats.append("IS_LAST")
+					if tokens[count+1]:
+						if tokens[count+1].lower() in vocab:
+							curr_feats.append("NEXT_FORM_"+str(vocab[tokens[count+1].lower()]))
+					else:
+						curr_feats.append("IS_FIRST")
 
 				# is number
 				if self.isnum(token): curr_feats.append("IS_NUM")

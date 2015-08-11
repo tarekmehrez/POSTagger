@@ -18,11 +18,14 @@ class Perceptron(object):
 		self.bias -= 0.1
 
 
-	def activate(self,feats):
+	def activate(self,feats,test):
 		result = 0
 		for i in feats:
 			result += self.weights[i] + ((self.weights[i] == 0) * random.uniform(0, 1))
-		return self.sign(result + self.bias)
+		if test:
+			return result + self.bias
+		else:
+			return self.sign(result + self.bias)
 
 
 	def sign(self,val):
