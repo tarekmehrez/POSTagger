@@ -1,16 +1,11 @@
-import numpy as np
 import re
 import logging
-import time
-
-from collections import defaultdict
-from token import Token
-
+import pickle
 
 class FeatureSet(object):
 
 
-	def __init__(self,meta_data):
+	def __init__(self):
 
 		self.num_reg = re.compile("^\d+((\,|\.|\/)\d+)*$")
 		self.char_reg = re.compile("^(\,|\.|\:|\;|\!|\#|\$|\%|\&|\*|\(|\)|\{|\[|\]|\}|\?|@|\'\'|\'|\"|\`|\\\)+$")
@@ -19,84 +14,75 @@ class FeatureSet(object):
 
 		self.logger = logging.getLogger(__name__)
 
-		self.vocab = meta_data[0]
-		self.labels = meta_data[1]
-
-	def extract_feats(self, file_path):
-
+	def extract_feats(self, input_file,output_file,vocab):
 
 		self.logger.info("Started Feature Extraction")
 
-		# get all tokens in the training file
-		with open(file_path) as file:
+		with open(input_file) as file:
 			tokens = [line.strip().decode('utf-8').split('\t',1)[0] for line in file]
 
-		with open(file_path) as file:
-			tags = [line.strip().decode('utf-8').split('\t',1)[-1].split("\n")[0] for line in file]
 
-		tokens = np.asarray(tokens).view(np.chararray)
-		tags = np.asarray(tags).view(np.chararray)
+		file = open(output_file, 'wb')
+		training = vocab == []
 
-		# now remove all empty lines
-		tokens = np.delete(tokens,np.where(tokens=="\n")[0])
-		tags = np.delete(tags,np.where(tokens=="\n")[0])
-
-		feats = []
 		for count,token in enumerate(tokens):
 			token = str(token)
 
 			if token:
-
-
-
-				curr_token = Token()
+				curr_feats = []
 
 				# token form
-				if tokens[count] in self.vocab: curr_token.set_feat("FORM_"+str(self.vocab.index(token.lower())))
+				if training and token not in vocab:
+					vocab.append(token.lower())
+				curr_feats.append("FORM_"+str(vocab.index(token.lower())))
 
 				# prev token form
 				if tokens[count-1]:
-					if tokens[count-1] in self.vocab:
-						curr_token.set_feat("PREV_FORM_"+str(self.vocab.index(tokens[count-1].lower())))
+					if training and tokens[count-1] not in vocab:
+						vocab.append(tokens[count-1].lower())
+					curr_feats.append("PREV_FORM_"+str(vocab.index(tokens[count-1].lower())))
+
 				else:
-					curr_token.set_feat("IS_FIRST")
+					curr_feats.append("IS_FIRST")
+
 				# next token form
 				if tokens[count+1]:
-					if tokens[count+1] in self.vocab:
-						curr_token.set_feat("NEXT_FORM_"+str(self.vocab.index(tokens[count+1].lower())))
+					if training and tokens[count+1] not in vocab:
+						vocab.append(tokens[count+1].lower())
+					curr_feats.append("NEXT_FORM_"+str(vocab.index(tokens[count+1].lower())))
 				else:
-					curr_token.set_feat("IS_LAST")
+					curr_feats.append("IS_LAST")
 
 				# is number
-				if self.isnum(token) or self.text2int(token): curr_token.set_feat("IS_NUM")
+				if self.isnum(token): curr_feats.append("IS_NUM")
 
 				# is upper
-				if token[0].isupper(): curr_token.set_feat("IS_UPP")
+				if token[0].isupper(): curr_feats.append("IS_UPP")
 
 				# is capitalized
-				if token.isupper(): curr_token.set_feat("IS_CAP")
+				if token.isupper(): curr_feats.append("IS_CAP")
 
 				# is abbreviated
-				if len(token) > 1 and token.endswith('.'): curr_token.set_feat("IS_ABB")
+				if len(token) > 1 and token.endswith('.'): curr_feats.append("IS_ABB")
 
 				# is special character
-				if self.char_reg.match(token): curr_token.set_feat("IS_CHAR")
+				if self.char_reg.match(token): curr_feats.append("IS_CHAR")
 
-				# contains hyphen
-				if '-' in token: curr_token.set_feat("HAS_HYPH")
-
-
-				feats.append(curr_token)
-
+				file.write(str(curr_feats) +"\n")
 
 			# no token = "\n" -> sentence ends, new sentence
 			else:
-				feats.append([])
+				file.write("\n")
 
 		self.logger.info("Finalizing Feature Extraction")
 
+		if training:
+			f = open('models/vocab', 'wb')
+			pickle.dump(vocab, f)
+			f.close()
 
-		return (feats, tokens, tags)
+
+		file.close()
 
 	def contains_digits(self,d):
 		_digits = re.compile('\d')
