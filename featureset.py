@@ -55,7 +55,7 @@ class FeatureSet(object):
 							idx += 1
 						curr_feats.append("NEXT_FORM_"+str(vocab[tokens[count+1].lower()]))
 					else:
-						curr_feats.append("IS_FIRST")
+						curr_feats.append("IS_LAST")
 
 
 				else:
@@ -70,7 +70,7 @@ class FeatureSet(object):
 						if tokens[count+1].lower() in vocab:
 							curr_feats.append("NEXT_FORM_"+str(vocab[tokens[count+1].lower()]))
 					else:
-						curr_feats.append("IS_FIRST")
+						curr_feats.append("IS_LAST")
 
 				# is number
 				if self.isnum(token): curr_feats.append("IS_NUM")

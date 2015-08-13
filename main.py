@@ -39,8 +39,8 @@ def extract_feats(input_file, output_file):
 def train(args):
 	train_file = args.input
 	if args.train_perceptron:
-
-		classifier = PerceptronClassifier(args.input,args.feats,args.labels)
+		vocab = read_obj('vocab')
+		classifier = PerceptronClassifier(args.input,args.feats,args.labels,len(vocab))
 		classifier.train(float(args.step),int(args.iter))
 		logger.info("Done Training, model is written in model file")
 		model = classifier.get_theta()
@@ -58,7 +58,7 @@ def test(args):
 	if args.test_perceptron:
 
 		model = read_obj('model')
-		classifier = PerceptronClassifier(args.input,args.feats,args.labels)
+		classifier = PerceptronClassifier(args.input,args.feats,args.labels,0)
 		classifier.load_theta(model)
 		classifier.test(args.output)
 
